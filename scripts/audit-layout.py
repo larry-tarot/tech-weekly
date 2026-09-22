@@ -196,9 +196,15 @@ MEASURE_JS = r"""(function(){
              phase: document.getElementById('phase').className};
 
   // 1) 视口横向溢出：任何可见元素边界超出视口
+  //    只量"叶子节点"（无子元素的图形/text/path/circle...）。
+  //    容器（如 <g class="pop p2">）的 getBoundingClientRect() 会按未变换前的
+  //    局部坐标系算外接框，父级 rotate() 后容器框可能比真实像素大一圈 ——
+  //    375px 视口下 g.pop.p2 量到 377.2，而其 4 个 rect 叶子最右只到 290.1。
+  //    那不是真溢出，是容器框假象，按叶子判定才不会误报。
   var overflow = [];
   document.querySelectorAll('body *').forEach(function(e){
-    if (e.closest('[aria-hidden="true"]')) return;            // 纯装饰层不计
+    if (e.children.length > 0) return;                     // 只量叶子
+    if (e.closest('[aria-hidden="true"]')) return;         // 纯装饰层不计
     var cs = getComputedStyle(e);
     if (cs.display === 'none' || cs.visibility === 'hidden') return;
     if (parseFloat(cs.opacity) === 0) return;

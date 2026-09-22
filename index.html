@@ -561,6 +561,9 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
   function lerp(a,b,t){ return a+(b-a)*t; }
   function easeOut(t){ return 1-Math.pow(1-t,3); }
   function easeIO(t){ return t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
+  /* 圆环隐去专用：正弦缓动，峰值速率只有平均值的 1.57 倍（easeIO 是 3 倍）。
+     转场是"收势"不是"发力"，不需要 easeIO 那种先蓄力再冲出去的头尾急加速。 */
+  function easeSettle(t){ return .5-.5*Math.cos(Math.PI*t); }
 
   /* ---------- 坐标轴目标几何（第一象限）---------- */
   var V0={x:300,y1:-20,y2:620}, V1={x:50,y1:50,y2:540};
@@ -667,10 +670,15 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
       f.el.setAttribute('opacity',(1-p).toFixed(3));
     });
 
-    /* ② 圆环：旋转进度条式，在 C 位置统一隐去（250 → 1200ms）*/
+    /* ② 圆环：旋转 + 遮罩收拢，在 C 位置统一隐去（250 → 1200ms）
+       原为 easeIO(rp)*540：950ms 转 1.5 圈，峰值角速度 1389°/s，
+       肉眼是一团糊，而且转圈本身不承担任何信息（环是对称的，转到哪都一样）。
+       改为 48° 单向缓转 + easeSettle：转幅刚好够看出"在动"，
+       峰值角速度降到 ~140°/s，且始终朝向 C 方向收拢，像被拧过去而不是被甩出去。 */
     var rp=clamp((t-250)/950,0,1);
     if(rp>0){
-      ringG.setAttribute('transform','rotate('+(easeIO(rp)*540).toFixed(1)+' 300 300)');
+      var es=easeSettle(rp);
+      ringG.setAttribute('transform','rotate('+(es*48).toFixed(1)+' 300 300)');
       var a1,w;
       if(rp<0.6){
         var q=rp/0.6;
