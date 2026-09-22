@@ -2,7 +2,8 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#F4F5F1">
 <meta name="description" content="科技周报 · 第 38 期 · 2026.09.21 发刊 · 层环开场 · 坐标目录">
 <title>科技周报 TECH WEEKLY · 第 38 期 · 2026.09.21</title>
 
@@ -65,6 +66,11 @@
 
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
+html{
+  -webkit-tap-highlight-color:transparent;   /* 去掉点击时的灰蓝闪光 */
+  -webkit-text-size-adjust:100%;             /* 横屏时不放大字号 */
+  overscroll-behavior:none;                  /* 这是一个全屏舞台，不需要下拉刷新/回弹 */
+}
 body{
   background:var(--bg-0);color:var(--ink-1);
   font-family:var(--f-fangyuan);font-size:15px;line-height:1.85;
@@ -72,8 +78,21 @@ body{
   overflow:hidden;
 }
 ::selection{background:var(--acid);color:var(--ink-0)}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 :focus-visible{outline:2px solid var(--acid-d);outline-offset:3px}
+
+/* ---------- 移动端平台层 ----------
+   触屏没有 hover：浏览器会在首次点击后保留 :hover 态不消失。
+   所有 hover 一律收进能力查询，触屏改用 :active 给按下反馈。 */
+@media (hover:hover) and (pointer:fine){
+  .hud .skip:hover{color:var(--ink-0);background:var(--bg-2)}
+  .pt:hover .dot,.pt:focus-visible .dot{fill:var(--acid-d)}
+  .pt:hover .id,.pt:focus-visible .id{fill:var(--ink-0)}
+  .core .open button:hover{background:var(--acid-d)}
+}
+.hud .skip:active{color:var(--ink-0);background:var(--bg-2)}
+.core .open button:active{background:var(--acid-d);transform:scale(.98)}
 
 /* ---------- 纸面底纹 ---------- */
 .paper{position:fixed;inset:0;z-index:0;pointer-events:none;
@@ -90,6 +109,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 
 /* ---- HUD ---- */
 .hud{display:flex;align-items:stretch;border-bottom:1px solid var(--line-2);flex:none;
+  padding-top:env(safe-area-inset-top,0px);       /* viewport-fit=cover 后内容会钻到刘海下 */
   background:rgba(244,245,241,.9);opacity:0;animation:fade .5s var(--ease) .1s forwards}
 .hud .cell{display:flex;align-items:center;gap:9px;padding:11px clamp(10px,1.6vw,20px);
   border-right:1px solid var(--line)}
@@ -100,12 +120,16 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .hud .skip{font-family:var(--f-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
   color:var(--ink-3);border-left:1px solid var(--line);padding:0 clamp(12px,1.8vw,22px);
   transition:color .18s var(--ease),background-color .18s var(--ease)}
-.hud .skip:hover{color:var(--ink-0);background:var(--bg-2)}
 
 /* ---- 舞台 ---- */
-.stage{flex:1;display:grid;place-items:center;position:relative;min-height:0;padding:10px}
+.stage{flex:1;display:grid;place-items:center;position:relative;min-height:0;padding:10px;
+  grid-template-rows:minmax(0,1fr);overflow:hidden}   /* 1fr 让行高确定，max-height:100% 才能生效 */
 
-.ringwrap{position:relative;width:min(70vmin,520px);aspect-ratio:1;flex:none}
+/* 舞台是 flex:1 的格子，宽高比随视口变化（手机竖屏明显宽 > 高）。
+   原来用 70vmin 会把手机竖屏的环压得很小（375px 下只有 263px，而舞台可用 355px）。
+   改用 min(88%, 520px) 让环吃满舞台宽度，短边（横屏矮高度）时由 aspect-ratio:1
+   自动收敛，不会溢出。 */
+.ringwrap{position:relative;width:min(88%,520px);max-height:100%;aspect-ratio:1;flex:none}
 .ringwrap>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 
 /* 粗线绘制 */
@@ -131,18 +155,26 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .phase-2 .furn--num{transition-delay:2.02s}
 .phase-2 .furn--title{transition-delay:2.08s}
 .tick{stroke:#171A18;stroke-width:1.4;fill:none}
+/* SVG 内字号按 viewBox 600 声明，实际渲染要乘缩放比（.ringwrap 宽 / 600）。
+   375px 视口下缩放比约 0.44，9.5px 只剩 4.2px —— 不可读。
+   用小屏断点直接放大声明值，让渲染结果回到 ~10px。 */
 .ticknum{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;fill:var(--ink-4)}
 .axis-title{font-family:var(--f-shuhei);font-size:12.5px;letter-spacing:.18em;fill:var(--ink-0)}
+@media (max-width:640px){
+  .ticknum{font-size:22px}
+  .axis-title{font-size:26px}
+}
 
 /* 档案点 */
 .pt{opacity:0;transform:scale(0);transform-box:fill-box;transform-origin:center;
   transition:opacity .32s var(--ease-stamp),transform .32s var(--ease-stamp);cursor:pointer}
 .phase-2 .pt{opacity:1;transform:scale(1)}
 .pt .dot{fill:#171A18;transition:fill .18s var(--ease)}
+/* 触屏命中区：圆点本身按 viewBox 缩放后在小屏只有 5-6px，
+   加一个不可见圆把点击区域补到 ≥26px（SVG 单位），不影响视觉 */
+.pt .hit{fill:transparent;stroke:none}
 .pt .id{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.08em;fill:var(--ink-3);
   transition:fill .18s var(--ease)}
-.pt:hover .dot,.pt:focus-visible .dot{fill:var(--acid-d)}
-.pt:hover .id,.pt:focus-visible .id{fill:var(--ink-0)}
 .pt.sel .dot{fill:var(--acid-d)}
 .pt.sel .id{fill:var(--ink-0)}
 @media (max-width:640px){.pt .id{display:none}}
@@ -184,8 +216,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .core .open button{display:inline-flex;align-items:center;gap:clamp(9px,1.5vmin,14px);
   background:var(--ink-0);color:var(--bg-0);padding:clamp(10px,1.7vmin,14px) clamp(18px,2.8vmin,28px);
   font-family:var(--f-shuhei);font-size:clamp(13px,1.75vmin,16px);letter-spacing:.2em;
-  transition:background-color .2s var(--ease)}
-.core .open button:hover{background:var(--acid-d)}
+  transition:background-color .2s var(--ease),transform .12s var(--ease)}
 .core .open button i{display:block;width:clamp(14px,2vmin,20px);height:1px;background:currentColor;position:relative;flex:none}
 .core .open button i::after{content:"";position:absolute;right:-1px;top:-3.5px;width:7px;height:7px;
   border-top:1px solid currentColor;border-right:1px solid currentColor;transform:rotate(45deg)}
@@ -230,10 +261,23 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 @media (max-width:900px){.aside{display:none}}
 
 .readout{position:absolute;left:var(--pad);bottom:clamp(16px,3.4vh,40px);z-index:5;
-  display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  display:flex;align-items:stretch;gap:10px;
   opacity:0;transform:translateY(10px);pointer-events:none}
 .phase-2 .readout{opacity:1;transform:none;pointer-events:auto;
   transition:opacity .5s var(--ease) 2.45s,transform .5s var(--ease) 2.45s}
+/* 上一条/下一条：档案点在小屏只有 3px 半径、最近两点中心距 12.6px，
+   几何上不可能做到 44px 触控标准（会把相邻点吞掉）。
+   所以触屏改用这对手动翻页按钮 —— 44px 触控目标，且不需要精确瞄准。 */
+.ro-nav{display:none;flex:none;align-self:stretch;width:44px;height:auto;min-height:44px;
+  font-family:var(--f-shuhei);font-size:22px;line-height:1;color:var(--ink-1);
+  border:1px solid var(--line-2);background:var(--bg-1);
+  transition:background-color .15s var(--ease),color .15s var(--ease)}
+.ro-nav:active{background:var(--acid-d);color:var(--ink-0);border-color:var(--acid-d)}
+.ro-body{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;min-width:0}
+@media (hover:hover) and (pointer:fine){
+  .ro-nav:hover{background:var(--acid-d);color:var(--ink-0);border-color:var(--acid-d)}
+}
+@media (pointer:coarse){.ro-nav{display:block}}
 .readout .id{font-family:var(--f-shuhei);font-size:clamp(18px,2.2vw,26px);letter-spacing:.03em;
   color:var(--ink-0);font-variant-numeric:tabular-nums}
 .readout .nm{font-family:var(--f-fangyuan);font-size:clamp(13px,1.5vw,15.5px);
@@ -244,8 +288,22 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .readout .st{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--acid-d);border:1px solid rgba(143,180,0,.45);padding:1px 8px}
 
+/* 小屏：readout 只有 376px 宽却要摆 4 项，会折成 3 行 107px 高，
+   翻页按钮跟着被拉成 107px —— 太大且难看。
+   收窄间距、允许标题单独一行，把高度压回 2 行。 */
+@media (pointer:coarse), (max-width:640px){
+  .readout{gap:8px;align-items:center}
+  .ro-body{gap:8px;flex:1 1 auto}
+  .readout .id{font-size:19px}
+  .readout .nm{font-size:13px;flex:1 1 100%;order:3;min-width:0}
+  .readout .coord{font-size:10px;padding-left:10px;order:2}
+  .readout .st{order:1;font-size:9px;padding:1px 6px}
+  .ro-nav{align-self:stretch;width:44px;min-height:44px;max-height:64px}
+}
+
 /* ---- 底部 ---- */
-.foot{flex:none;border-top:1px solid var(--line-2);background:var(--bg-1)}
+.foot{flex:none;border-top:1px solid var(--line-2);background:var(--bg-1);
+  padding-bottom:env(safe-area-inset-bottom,0px)}   /* 底部避开 home 指示条 */
 .foot__grid{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line)}
 .foot__grid .c{padding:12px clamp(10px,1.6vw,20px);border-right:1px solid var(--line);
   opacity:0;animation:fade .5s var(--ease) forwards}
@@ -254,13 +312,17 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .foot__grid .c:nth-child(2){animation-delay:2.64s}
 .foot__grid .c:nth-child(3){animation-delay:2.72s}
 .foot__grid .c:nth-child(4){animation-delay:2.80s}
-.foot__grid .k{font-family:var(--f-mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+.foot__grid .k{font-family:var(--f-mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
 .foot__grid .v{font-family:var(--f-shuhei);font-size:clamp(13px,1.75vw,18px);letter-spacing:.04em;
   color:var(--ink-0);margin-top:3px;font-variant-numeric:tabular-nums}
 .foot__grid .v s{text-decoration:none;color:var(--acid)}
-@media (max-width:640px){.foot__grid{grid-template-columns:repeat(2,1fr)}
+@media (max-width:640px){
+  .foot__grid{grid-template-columns:repeat(2,1fr)}
   .foot__grid .c:nth-child(2n){border-right:0}
-  .foot__grid .c:nth-child(-n+2){border-bottom:1px solid var(--line)}}
+  .foot__grid .c:nth-child(-n+2){border-bottom:1px solid var(--line)}
+  /* 9px 的 mono 小字在手机上不可读，抬到 10.5px；等宽字体字距随收窄 */
+  .foot__grid .k{font-size:10.5px;letter-spacing:.14em}
+}
 
 .foot__bar{display:flex;align-items:center;gap:clamp(12px,2.4vw,32px);flex-wrap:wrap;
   padding:10px clamp(10px,1.6vw,20px)}
@@ -331,10 +393,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     </div>
 
     <div class="readout" id="readout">
-      <span class="id" id="roId">AI-001</span>
-      <span class="nm" id="roNm">多模态大模型实现跨领域自主推理</span>
-      <span class="st" id="roSt">Verified</span>
-      <span class="coord">科技 <b id="roX">78</b> / 工程 <b id="roY">42</b></span>
+      <button class="ro-nav" id="roPrev" type="button" aria-label="上一份档案">‹</button>
+      <span class="ro-body">
+        <span class="id" id="roId">AI-001</span>
+        <span class="nm" id="roNm">多模态大模型实现跨领域自主推理</span>
+        <span class="st" id="roSt">Verified</span>
+        <span class="coord">科技 <b id="roX">78</b> / 工程 <b id="roY">42</b></span>
+      </span>
+      <button class="ro-nav" id="roNext" type="button" aria-label="下一份档案">›</button>
     </div>
 
     <div class="ringwrap">
@@ -392,15 +458,19 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
             <text x="316" y="44">R 250</text>
             <text x="316" y="66" fill="#8FB400">R 212 / ARC 270°</text>
             <text x="316" y="130">R 122</text>
-            <text x="20" y="292" text-anchor="end">R 172</text>
+            <!-- anchor=end 时 x=20 会让文字向左伸到 viewBox 之外（bboxX=-18），
+                 viewBox 左边界是 0，故改用 start 并右移到 x=32 -->
+            <text x="32" y="292">R 172</text>
           </g>
         </g>
 
-        <!-- 四角标记：向四周变速移动隐去 -->
-        <g id="cm-tl"><g class="pop p3" stroke="#171A18" stroke-width="1.6"><path d="M18 36V18h18"/></g></g>
-        <g id="cm-tr"><g class="pop p3" stroke="#171A18" stroke-width="1.6"><path d="M582 36V18h-18"/></g></g>
-        <g id="cm-bl"><g class="pop p3" stroke="#171A18" stroke-width="1.6"><path d="M18 564v18h18"/></g></g>
-        <g id="cm-br"><g class="pop p3" stroke="#171A18" stroke-width="1.6"><path d="M582 564v18h-18"/></g></g>
+        <!-- 四角标记：向四周变速移动隐去。
+             x 取 18/582 距 viewBox 边只有 18 单位，缩放比 0.577 时右边缘会超出视口 1px。
+             收到 22/578 让四角在任何缩放比下都留出余量。 -->
+        <g id="cm-tl"><g class="pop p3" stroke="#171A18" stroke-width="1.6"><path d="M22 36V22h14"/></g></g>
+        <g id="cm-tr"><g class="pop p3" stroke="#171A18" stroke-width="1.6"><path d="M578 36V22h-14"/></g></g>
+        <g id="cm-bl"><g class="pop p3" stroke="#171A18" stroke-width="1.6"><path d="M22 564v14h14"/></g></g>
+        <g id="cm-br"><g class="pop p3" stroke="#171A18" stroke-width="1.6"><path d="M578 564v14h-14"/></g></g>
 
         <!-- 坐标轴附属 -->
         <g class="furn furn--arrow" fill="#171A18">
@@ -546,13 +616,18 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     g.setAttribute('role','button');
     g.setAttribute('aria-label', d.id+' '+d.full+'，科技性 '+d.x+'，工程性 '+d.y);
     g.style.transitionDelay=(2.2+i*0.04)+'s';
+    g.dataset.enterDelay=(2.2+i*0.04)+'s';   // 记下入场延迟，退场时要清掉
     var dot=document.createElementNS(NS,'circle');
     dot.setAttribute('class','dot'); dot.setAttribute('cx',cx); dot.setAttribute('cy',cy); dot.setAttribute('r',6.5);
     var t=document.createElementNS(NS,'text');
     t.setAttribute('class','id'); t.setAttribute('x',cx+d.lx); t.setAttribute('y',cy+d.ly);
     t.setAttribute('text-anchor', d.lx<0?'end':'start');
     t.textContent=d.id;
-    g.appendChild(dot); g.appendChild(t);
+    /* 触屏命中区：放在最底层，圆点（6.5 单位）在小屏缩放后只有 5-6px，
+       补一个 26 单位的透明圆，让点击区域在 320px 视口也有 ≥11px */
+    var hit=document.createElementNS(NS,'circle');
+    hit.setAttribute('class','hit'); hit.setAttribute('cx',cx); hit.setAttribute('cy',cy); hit.setAttribute('r',26);
+    g.appendChild(hit); g.appendChild(dot); g.appendChild(t);
     document.getElementById('points').appendChild(g);
     pts.push(g);
   });
@@ -636,7 +711,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     hline.setAttribute('stroke-width',2); hline.setAttribute('opacity',.42);
     btnSkip.textContent='跳过 / Skip';
     hudStatus.textContent='● Online';
-    pts.forEach(function(p){ p.classList.remove('sel'); });
+    pts.forEach(function(p){
+      p.classList.remove('sel');
+      p.style.transitionDelay = p.dataset.enterDelay || '0s';   // 复位入场延迟，供下次进入
+    });
     cur=-1;
     /* 重播开场 CSS 动画 */
     document.querySelectorAll('.draw,.pop,.core span,.core .date small i,.core .rule,.core .open,.hud,.foot__grid .c,.legend,.vert-w,.flash')
@@ -670,11 +748,24 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     if(!phase.classList.contains('phase-2')) return;
     phase.classList.remove('phase-2');
     reset();
+    /* reset() 会把入场用的 transition-delay 复位（供下次进入时错峰），
+       但那会让退场也延迟 2 秒多。所以退场清 delay 必须放在 reset() 之后。 */
+    pts.forEach(function(p){ p.style.transitionDelay='0s'; });
   }
 
   document.getElementById('btnEnter').addEventListener('click', function(e){ e.stopPropagation(); enter(); });
   btnSkip.addEventListener('click', function(e){ e.stopPropagation();
     phase.classList.contains('phase-2') ? back() : enter();
+  });
+  /* 触屏翻页：小屏上档案点只有 3px，靠点不中，用 readout 两侧的 44px 按钮 */
+  ['roPrev','roNext'].forEach(function(id){
+    var el=document.getElementById(id); if(!el) return;
+    el.addEventListener('click', function(e){
+      e.stopPropagation();
+      if(!phase.classList.contains('phase-2')) return;
+      var step = id==='roNext' ? 1 : -1;
+      readout((cur+step+DATA.length)%DATA.length);
+    });
   });
   document.addEventListener('keydown', function(e){
     if(phase.classList.contains('phase-2')){
