@@ -317,6 +317,26 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <div class="vert-w vert-w--l"><span class="vert">Rhine-style Research VI · Rev.04</span></div>
     <div class="vert-w vert-w--r"><span class="vert">Layer Ring Sequence · 04 Layers</span></div>
 
+    <!-- 第二幕文字层：放在 .stage 内，top/bottom 才能相对舞台解析，
+         否则会以 .phase（含 HUD 与 foot）为基准，压住 HUD 与底部元数据 -->
+    <div class="titleblock">
+      <span class="no">0<s>1</s></span>
+      <span class="zh">本期目录</span>
+      <span class="en">Contents</span>
+    </div>
+
+    <div class="aside">
+      <span class="lbl">横 = 科技性 / 纵 = 工程性</span>
+      <p>12 份档案按两个维度落点。右上角是既前沿又能落地的一类，左上角是工程侧的持续优化——<b>位置本身就是一个判断</b>。</p>
+    </div>
+
+    <div class="readout" id="readout">
+      <span class="id" id="roId">AI-001</span>
+      <span class="nm" id="roNm">多模态大模型实现跨领域自主推理</span>
+      <span class="st" id="roSt">Verified</span>
+      <span class="coord">科技 <b id="roX">78</b> / 工程 <b id="roY">42</b></span>
+    </div>
+
     <div class="ringwrap">
       <svg viewBox="0 0 600 600" aria-label="四层圆环，环心为本期期号与发刊时间；打开后圆环隐去，十字准线滑移成长为坐标目录">
         <defs>
@@ -429,25 +449,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     </div>
 
     <div class="flash" aria-hidden="true"></div>
-  </div>
-
-  <!-- ==================== 第二幕文字层 ==================== -->
-  <div class="titleblock">
-    <span class="no">0<s>1</s></span>
-    <span class="zh">本期目录</span>
-    <span class="en">Contents</span>
-  </div>
-
-  <div class="aside">
-    <span class="lbl">横 = 科技性 / 纵 = 工程性</span>
-    <p>12 份档案按两个维度落点。右上角是既前沿又能落地的一类，左上角是工程侧的持续优化——<b>位置本身就是一个判断</b>。</p>
-  </div>
-
-  <div class="readout" id="readout">
-    <span class="id" id="roId">AI-001</span>
-    <span class="nm" id="roNm">多模态大模型实现跨领域自主推理</span>
-    <span class="st" id="roSt">Verified</span>
-    <span class="coord">科技 <b id="roX">78</b> / 工程 <b id="roY">42</b></span>
   </div>
 
   <!-- ==================== 底部 ==================== -->
