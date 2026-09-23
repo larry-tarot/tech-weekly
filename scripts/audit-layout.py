@@ -59,7 +59,6 @@ TEXT_PAIRS = [
     (".hud", "#readout", "HUD ↔ readout"),
     (".foot__grid", "#readout", "底部元数据 ↔ readout"),
     (".titleblock", ".aside", "左上标题 ↔ 右上说明"),
-    (".foot__grid", ".axis-legend", "底部元数据 ↔ 轴图例"),
 ]
 
 # 可交互元素的最小点击区域（CSS 像素）。SVG 档案点允许更小，只报 WARN。
