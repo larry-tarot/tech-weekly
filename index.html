@@ -195,19 +195,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 .pt.sel .id{fill:var(--ink-0)}
 @media (max-width:640px){.pt .id{display:none}}
 
-/* 底衬：四层圆环与十字准线会从「38」「科技周报」正中间穿过去，
-   实测压字的组合有 6 组（seg 压 5 处文字、r2/r3/r4 各压 2-3 处）——
-   这是封面"乱"的主因之一。
-   不能用椭圆渐变：内容是"高瘦"块，椭圆在上下两端收窄，
-   375px 下日期那个角上底衬只剩 30% 不透明度，横线照样穿过去。
-   硬边圆角实底，内边距收到 6px（原 11px/10px）：少遮一点圆环，
-   好让硬边这个"贴片"的面积也小一些。边缘不加辉光羽化。 */
+/* 环心 */
+/* 底衬已按用户要求去掉（原来它是圆环/十字准线从「38」「科技周报」
+   正中间穿过去时用来挡线的硬边圆角实底）。去掉后线条会重新穿字，
+   这是用户的选择，后续"太挤太乱"的反馈应据此定位。 */
 .core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:62%;text-align:center;z-index:3;display:flex;flex-direction:column;align-items:center;
   transition:opacity .3s var(--ease),transform .3s var(--ease)}
-.core::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-  width:calc(100% + 12px);height:calc(100% + 12px);z-index:-1;pointer-events:none;
-  border-radius:20px;background:var(--bg-0)}
 .phase-2 .core{opacity:0;transform:translate(-50%,-50%) translateY(14px)}
 .core .vol{font-family:var(--f-mono);font-size:clamp(9px,1.1vw,10.5px);letter-spacing:.34em;
   text-transform:uppercase;color:var(--ink-3);overflow:hidden;text-indent:.34em}
