@@ -291,7 +291,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
 .aside p b{color:var(--ink-0);font-weight:700;background:linear-gradient(transparent 62%,var(--acid-l) 62%)}
 @media (max-width:900px){.aside{display:none}}
 
-/* ---- 左下角读数区 (标签大、竖向排列、整块向右移、3D Y轴旋转) ---- */
+/* ---- 左下角读数区 (标签大、竖向排列、整块向右移、3D Y轴原地翻转) ---- */
 .readout{position:absolute;left:calc(var(--pad) + clamp(20px, 3.5vw, 64px));bottom:clamp(16px,3.4vh,40px);z-index:5;
   display:flex;align-items:flex-end;gap:18px;
   opacity:0;transform:translateY(10px);pointer-events:none;
@@ -307,46 +307,71 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
   color:var(--acid-d);border:1px solid rgba(143,180,0,.45);padding:1px 8px;line-height:1.4}
 
 .keys-col{display:flex;flex-direction:column;gap:8px;perspective:800px;
-  margin-left:clamp(12px, 1.8vw, 28px)}
+  margin-left:clamp(12px, 1.8vw, 28px);min-height:28px}
+
 .readout .k-tag{font-family:var(--f-fangyuan);font-size:clamp(13px,1.4vw,15.5px);letter-spacing:.05em;
   color:var(--ink-1);background:rgba(244,245,241,.94);border:1px solid var(--line-2);
   padding:3px 12px 3px 10px;border-left:3.5px solid var(--ink-0);
   box-shadow:0 3px 10px rgba(23,26,24,.05);border-radius:1px;
   display:inline-flex;align-items:center;width:max-content;
-  transform-origin:center center;backface-visibility:hidden}
-.readout .k-tag:first-child{border-left-color:var(--acid-d);font-weight:700}
+  transform-origin:center center;backface-visibility:hidden;
+  transition:border-left-color .2s var(--ease),opacity .2s var(--ease),transform .3s var(--ease)}
+.readout .k-tag.is-lead{border-left-color:var(--acid-d);font-weight:700}
 
-/* 3D 效果 Y 轴（从上到下的纵向轴）水平翻转一整圈 + 数量动态增隐 */
-@keyframes tagSpinIn {
+/* 3D 原地 Y 轴翻转：前半段翻到 90°(侧立隐去) -> 换字 -> 后半段从 90° 翻出回平，绝不闪现与塌陷 */
+@keyframes tagFlipOut {
   0% {
-    opacity: 0;
-    transform: perspective(700px) scale(0.7) rotateY(-360deg);
+    opacity: 1;
+    transform: perspective(600px) scale(1) rotateY(0deg);
+  }
+  100% {
+    opacity: 0.15;
+    transform: perspective(600px) scale(0.92) rotateY(90deg);
+  }
+}
+@keyframes tagFlipIn {
+  0% {
+    opacity: 0.15;
+    transform: perspective(600px) scale(0.92) rotateY(-90deg);
   }
   60% {
     opacity: 0.95;
-    transform: perspective(700px) scale(1.04) rotateY(15deg);
+    transform: perspective(600px) scale(1.03) rotateY(10deg);
   }
   100% {
     opacity: 1;
-    transform: perspective(700px) scale(1) rotateY(0deg);
+    transform: perspective(600px) scale(1) rotateY(0deg);
   }
 }
-@keyframes tagFadeOut {
+@keyframes tagSlideCollapse {
   0% {
     opacity: 1;
-    transform: perspective(700px) scale(1) rotateY(0deg);
+    max-height: 36px;
+    transform: scale(1) rotateY(0deg);
+    margin-bottom: 0;
   }
   100% {
     opacity: 0;
-    transform: perspective(700px) scale(0.7) rotateY(360deg);
+    max-height: 0;
+    transform: scale(0.7) rotateY(90deg);
+    margin-bottom: -8px;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 }
-.k-tag.is-anim-in{
-  animation: tagSpinIn .52s var(--ease) forwards;
-  animation-delay: calc(var(--ti, 0) * 45ms);
+
+.k-tag.is-flipping-out{
+  animation: tagFlipOut .18s ease-in forwards !important;
+  animation-fill-mode: both !important;
 }
-.k-tag.is-anim-out{
-  animation: tagFadeOut .25s var(--ease) forwards;
+.k-tag.is-flipping-in{
+  animation: tagFlipIn .32s var(--ease) forwards !important;
+  animation-fill-mode: both !important;
+}
+.k-tag.is-collapsing{
+  overflow: hidden;
+  animation: tagSlideCollapse .22s var(--ease) forwards !important;
+  animation-fill-mode: both !important;
 }
 
 .ro-nav{display:none;flex:none;align-self:flex-end;width:40px;height:40px;min-height:40px;
@@ -906,23 +931,59 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
 
     if(tagAnimTimer){ clearTimeout(tagAnimTimer); tagAnimTimer = null; }
 
-    var oldTags = [].slice.call(roKeys.children);
-    if(oldTags.length > 0){
-      // 旧标签沿 Y 轴旋转淡出消失
-      oldTags.forEach(function(el){ el.className = 'k-tag is-anim-out'; });
-    }
+    var targetKeys = keys || [];
+    var existingTags = [].slice.call(roKeys.children).filter(function(t){ return !t.classList.contains('is-collapsing'); });
 
-    tagAnimTimer = setTimeout(function(){
+    /* 首次加载或容器为空：顺滑翻入 */
+    if(existingTags.length === 0){
       roKeys.innerHTML = '';
-      (keys || []).forEach(function(k, idx){
+      targetKeys.forEach(function(k, idx){
         var tag = document.createElement('span');
-        tag.className = 'k-tag is-anim-in';
-        tag.style.setProperty('--ti', idx);
+        tag.className = 'k-tag' + (idx === 0 ? ' is-lead' : '') + ' is-flipping-in';
+        tag.style.animationDelay = (idx * 30) + 'ms';
         tag.textContent = k;
         roKeys.appendChild(tag);
       });
+      return;
+    }
+
+    /* 原地 3D 翻牌：零 DOM 拔除、零高度塌陷
+       第一步：现有标签原地绕 Y 轴向内翻转至 90° (完全侧面对人，文字不可见) */
+    existingTags.forEach(function(t, idx){
+      t.style.animationDelay = (idx * 25) + 'ms';
+      t.classList.remove('is-flipping-in');
+      void t.offsetWidth;
+      t.classList.add('is-flipping-out');
+    });
+
+    /* 多余标签执行平滑折叠 */
+    if(existingTags.length > targetKeys.length){
+      for(var j = targetKeys.length; j < existingTags.length; j++){
+        existingTags[j].classList.add('is-collapsing');
+      }
+    }
+
+    /* 第二步：在 160ms 标签侧立不可见的一瞬，静默替换文字并向外翻出 */
+    tagAnimTimer = setTimeout(function(){
+      [].slice.call(roKeys.querySelectorAll('.is-collapsing')).forEach(function(el){ el.remove(); });
+
+      targetKeys.forEach(function(k, idx){
+        var tag = roKeys.children[idx];
+        if(!tag){
+          tag = document.createElement('span');
+          tag.className = 'k-tag';
+          roKeys.appendChild(tag);
+        }
+        tag.textContent = k;
+        tag.classList.toggle('is-lead', idx === 0);
+        tag.style.animationDelay = (idx * 25) + 'ms';
+        tag.classList.remove('is-flipping-out');
+        void tag.offsetWidth;
+        tag.classList.add('is-flipping-in');
+      });
+
       tagAnimTimer = null;
-    }, oldTags.length > 0 ? 140 : 0);
+    }, 160);
   }
 
   function readout(i){
