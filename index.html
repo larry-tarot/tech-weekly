@@ -379,6 +379,136 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
   .core .open{opacity:1;transform:none}
   .hud,.foot__grid .c,.legend,.vert-w{opacity:1}
 }
+
+/* ==========================================================================
+   鼠标悬浮简要信息卡 (HUD Tooltip)
+   ========================================================================== */
+.tip-card{position:absolute;z-index:20;pointer-events:none;opacity:0;
+  transform:translate(-50%,-100%) translateY(-6px);
+  transition:opacity .18s var(--ease-ui),transform .18s var(--ease-ui);
+  width:max-content;max-width:280px;padding:9px 12px;background:rgba(244,245,241,.96);
+  border:1px solid var(--line-2);box-shadow:0 8px 24px rgba(23,26,24,.08);
+  border-radius:2px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.tip-card.is-visible{opacity:1;transform:translate(-50%,-100%) translateY(-12px);pointer-events:auto;cursor:pointer}
+.tip-card.flip-down{transform:translate(-50%,14px)}
+.tip-card__head{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.tip-card__id{font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;color:var(--acid-d);font-weight:700}
+.tip-card__st{font-family:var(--f-mono);font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--acid-d);border:1px solid rgba(143,180,0,.45);padding:0 5px;border-radius:1px}
+.tip-card__dept{margin-left:auto;font-family:var(--f-mono);font-size:9px;color:var(--ink-3);letter-spacing:.08em}
+.tip-card__title{font-family:var(--f-fangyuan);font-size:12.5px;line-height:1.45;color:var(--ink-0);
+  margin-bottom:6px;letter-spacing:.02em}
+.tip-card__foot{display:flex;align-items:center;justify-content:space-between;
+  border-top:1px solid var(--line);padding-top:5px;font-family:var(--f-mono);font-size:9px;color:var(--ink-3)}
+.tip-card__action{color:var(--acid-d);font-weight:700;display:flex;align-items:center;gap:3px}
+@media (hover:none) or (pointer:coarse){
+  .tip-card{display:none!important}
+}
+
+/* ==========================================================================
+   点击坐标：放大圆圈 + 遮罩转场 (Zoom Portal Transition)
+   ========================================================================== */
+.zoom-portal{position:fixed;inset:0;z-index:30;pointer-events:none;opacity:0;
+  clip-path:circle(0px at var(--zx, 50%) var(--zy, 50%));
+  background:var(--bg-0);transition:clip-path .55s var(--ease),opacity .25s var(--ease)}
+.zoom-portal.is-active{opacity:1;clip-path:circle(160vmax at var(--zx, 50%) var(--zy, 50%))}
+.zoom-portal__ring{position:absolute;left:var(--zx, 50%);top:var(--zy, 50%);
+  width:16px;height:16px;margin:-8px 0 0 -8px;border-radius:50%;
+  border:2px solid var(--acid);box-sizing:border-box;pointer-events:none;
+  transform:scale(1);opacity:1;transition:transform .55s var(--ease),opacity .45s var(--ease)}
+.zoom-portal.is-active .zoom-portal__ring{transform:scale(120);opacity:0}
+
+/* ==========================================================================
+   第三幕：新闻正文页面 (Phase 3 / Article Dossier)
+   ========================================================================== */
+.article-view{position:fixed;inset:0;z-index:35;background:var(--bg-0);
+  display:none;flex-direction:column;opacity:0;pointer-events:none;
+  transition:opacity .35s var(--ease)}
+.article-view.is-open{display:flex;opacity:1;pointer-events:auto}
+.art-hud{display:flex;align-items:stretch;border-bottom:1px solid var(--line-2);flex:none;
+  padding-top:env(safe-area-inset-top,0px);background:rgba(244,245,241,.96);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.art-back{display:inline-flex;align-items:center;gap:8px;padding:0 20px;min-height:44px;
+  font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-1);border-right:1px solid var(--line);background:none;transition:background-color .15s var(--ease-ui)}
+.art-back:hover{background:var(--bg-2);color:var(--ink-0)}
+.art-back .arr{font-size:14px;color:var(--acid-d)}
+.art-back s{text-decoration:none;color:var(--ink-4);font-size:9.5px}
+.art-id-badge{display:flex;align-items:center;gap:10px;padding:0 18px;font-family:var(--f-mono);
+  font-size:11.5px;letter-spacing:.12em;color:var(--ink-2)}
+.art-id-badge .num{color:var(--acid-d);font-weight:700}
+.art-id-badge .sub{font-size:9.5px;letter-spacing:.18em;color:var(--ink-3);text-transform:uppercase}
+.art-nav-grp{margin-left:auto;display:flex;border-left:1px solid var(--line)}
+.art-pbtn{min-width:76px;min-height:44px;padding:0 14px;font-family:var(--f-mono);font-size:10px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--ink-2);display:inline-flex;
+  align-items:center;justify-content:center;transition:background-color .15s var(--ease-ui)}
+.art-pbtn:hover{background:var(--bg-2);color:var(--ink-0)}
+.art-pbtn:first-child{border-right:1px solid var(--line)}
+
+.art-scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding:clamp(16px,3.5vw,48px) var(--pad) calc(48px + env(safe-area-inset-bottom,0px))}
+.art-sheet{max-width:960px;margin:0 auto;background:var(--bg-1);border:1px solid var(--line-2);
+  position:relative;box-shadow:0 12px 36px rgba(23,26,24,.05)}
+.art-sheet::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--acid)}
+.art-header{padding:clamp(20px,3.5vw,36px) clamp(18px,3vw,36px);border-bottom:1px solid var(--line-2)}
+.art-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:14px;
+  font-family:var(--f-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase}
+.art-tag{padding:2px 8px;border:1px solid var(--line);border-radius:1px;color:var(--ink-2);background:var(--bg-0)}
+.art-tag.dept{color:var(--acid-d);border-color:rgba(143,180,0,.45);font-weight:700}
+.art-status{display:inline-flex;align-items:center;gap:6px;color:var(--acid-d);font-weight:700;margin-left:auto}
+.art-status .dot{width:6px;height:6px;border-radius:50%;background:var(--acid-d)}
+.art-date{color:var(--ink-3)}
+.art-title{font-family:var(--f-shuhei);font-size:clamp(22px,3.2vw,36px);line-height:1.3;
+  letter-spacing:.02em;color:var(--ink-0);margin-top:4px}
+
+.art-body-grid{display:grid;grid-template-columns:1fr 18rem}
+.art-main{padding:clamp(20px,3.5vw,36px) clamp(18px,3vw,36px);border-right:1px solid var(--line)}
+.art-block{margin-bottom:28px}
+.art-block:last-child{margin-bottom:0}
+.art-block__label{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--acid-d);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.art-block__label::after{content:"";flex:1;height:1px;background:var(--line)}
+.art-sum{font-family:var(--f-songti);font-size:clamp(15px,1.3vw,17px);line-height:2.05;
+  color:var(--ink-1);text-align:justify;text-justify:inter-ideograph}
+.art-read{font-size:14.5px;line-height:1.95;color:var(--ink-2);text-align:justify}
+.art-read b{color:var(--ink-0);font-weight:700;background:linear-gradient(transparent 60%,var(--acid-l) 60%)}
+
+.art-sidebar{padding:clamp(20px,2.5vw,32px);background:rgba(23,26,24,.015);display:flex;flex-direction:column;gap:24px}
+.art-sidebox__title{font-family:var(--f-mono);font-size:9px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--ink-3);margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.art-kv{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em}
+.art-kv dt{color:var(--ink-4);text-transform:uppercase}
+.art-kv dd{color:var(--ink-1);text-align:right}
+.art-kv dd.acid{color:var(--acid-d);font-weight:700}
+.art-coord-box{display:flex;flex-direction:column;gap:6px;font-family:var(--f-mono);font-size:10px}
+.art-coord-box .crow{display:flex;justify-content:space-between;color:var(--ink-3)}
+.art-coord-box .crow b{color:var(--ink-0);font-weight:700}
+
+.art-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
+  padding:18px clamp(18px,3vw,36px);border-top:1px solid var(--line-2);background:var(--bg-0)}
+.art-foot-back{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-2);min-height:38px;padding:0 14px;border:1px solid var(--line);border-radius:1px;
+  transition:background-color .15s var(--ease-ui)}
+.art-foot-back:hover{background:var(--bg-2);color:var(--ink-0)}
+.art-foot-nav{display:flex;gap:10px}
+.art-foot-btn{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  min-height:38px;padding:0 14px;border:1px solid var(--line);border-radius:1px;
+  color:var(--ink-2);transition:background-color .15s var(--ease-ui)}
+.art-foot-btn:hover{background:var(--bg-2);color:var(--ink-0)}
+
+@media (max-width:860px){
+  .art-body-grid{grid-template-columns:1fr}
+  .art-main{border-right:0;border-bottom:1px solid var(--line)}
+  .art-id-badge .sub{display:none}
+}
+@media (max-width:540px){
+  .art-hud{flex-wrap:wrap}
+  .art-id-badge{order:2;width:100%;border-top:1px solid var(--line);min-height:36px;padding:4px var(--pad)}
+  .art-back{min-height:42px}
+  .art-pbtn{min-height:42px}
+  .art-footer{flex-direction:column;align-items:stretch}
+  .art-foot-nav{display:grid;grid-template-columns:1fr 1fr}
+}
 </style>
 </head>
 <body>
@@ -507,6 +637,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
       </div>
     </div>
 
+    <!-- 鼠标悬浮简要信息卡 (HUD Tooltip) -->
+    <div class="tip-card" id="tipCard" aria-hidden="true">
+      <div class="tip-card__head">
+        <span class="tip-card__id" id="tipId">AI-001</span>
+        <span class="tip-card__st" id="tipSt">Verified</span>
+        <span class="tip-card__dept" id="tipDept">基础模型科</span>
+      </div>
+      <div class="tip-card__title" id="tipTitle">多模态大模型实现跨领域自主推理</div>
+      <div class="tip-card__foot">
+        <span class="tip-card__action">点击查看档案正文 →</span>
+        <span class="tip-card__pri" id="tipPri">A-01</span>
+      </div>
+    </div>
+
     <div class="flash" aria-hidden="true"></div>
   </div>
 
@@ -533,9 +677,91 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 
 </div>
 
+<!-- ==================== 点击坐标放大圆圈 + 遮罩 ==================== -->
+<div class="zoom-portal" id="zoomPortal" aria-hidden="true">
+  <div class="zoom-portal__ring"></div>
+</div>
+
+<!-- ==================== 第三幕：新闻正文页面 ==================== -->
+<div class="article-view" id="articleView" aria-hidden="true">
+  <!-- HUD 顶栏 -->
+  <div class="art-hud">
+    <button class="art-back" id="artBack" type="button" aria-label="返回坐标目录">
+      <span class="arr">←</span> 返回目录 <s>/ BACK</s>
+    </button>
+    <div class="art-id-badge">
+      <span class="num" id="artHeadId">AI-001</span>
+      <span class="sep">·</span>
+      <span class="sub">深度科研档案 / DOSSIER</span>
+    </div>
+    <div class="art-nav-grp">
+      <button class="art-pbtn" id="artPrev" type="button" aria-label="上一篇档案">‹ 上一篇</button>
+      <button class="art-pbtn" id="artNext" type="button" aria-label="下一篇档案">下一篇 ›</button>
+    </div>
+  </div>
+
+  <!-- 正文滚动容器 -->
+  <div class="art-scroll" id="artScroll">
+    <article class="art-sheet">
+      <header class="art-header">
+        <div class="art-tags">
+          <span class="art-tag dept" id="artDept">基础模型科</span>
+          <span class="art-tag type" id="artType">Model</span>
+          <span class="art-tag pri" id="artPri">优先级 A-01</span>
+          <span class="art-status" id="artStatus"><span class="dot"></span>Verified</span>
+          <span class="art-date" id="artDate">2026 / 09 / 16 · Rev. 04</span>
+        </div>
+        <h1 class="art-title" id="artTitle">多模态大模型实现跨领域自主推理，通用人工智能迈出关键一步</h1>
+      </header>
+
+      <div class="art-body-grid">
+        <div class="art-main">
+          <div class="art-block sum-block">
+            <div class="art-block__label">SUMMARY / 导语摘要</div>
+            <p class="art-sum" id="artSum"></p>
+          </div>
+          <div class="art-block read-block">
+            <div class="art-block__label">ANALYSIS / 科技深度解读</div>
+            <div class="art-read" id="artRead"></div>
+          </div>
+        </div>
+
+        <aside class="art-sidebar">
+          <div class="art-sidebox">
+            <div class="art-sidebox__title">METADATA / 档案元数据</div>
+            <dl class="art-kv" id="artSideList"></dl>
+          </div>
+          <div class="art-sidebox">
+            <div class="art-sidebox__title">COORDINATE / 坐标定位</div>
+            <div class="art-coord-box">
+              <div class="crow"><span>科技性 (Technical)</span><b id="artCoordX">64</b></div>
+              <div class="crow"><span>工程性 (Engineering)</span><b id="artCoordY">8</b></div>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <footer class="art-footer">
+        <button class="art-foot-back" id="artFootBack" type="button">
+          ← 返回坐标目录
+        </button>
+        <div class="art-foot-nav">
+          <button class="art-foot-btn" id="artFootPrev" type="button">‹ 上一篇</button>
+          <button class="art-foot-btn" id="artFootNext" type="button">下一篇 ›</button>
+        </div>
+      </footer>
+    </article>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
+  if(!SVGElement.prototype.click){
+    SVGElement.prototype.click = function(){
+      this.dispatchEvent(new MouseEvent('click', {bubbles:true, cancelable:true}));
+    };
+  }
   var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   var phase  = document.getElementById('phase');
   var vline  = document.getElementById('vline');
@@ -580,24 +806,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
     {el:document.getElementById('cm-br'), dx: 78, dy: 78, dur:585, delay:124}
   ];
 
-  /* ---------- 档案数据 ---------- */
-  /* 重排坐标：原值挤在 x 45-95 / y 40-92（右上一坨，左下大片空白）。
-     现按线性拉伸铺到 5-95，左右下角都吃到，相对关系（谁高谁低）不变。
-     lx/ly 按新位置逐个重定标签朝向：全部朝远离其他点的一侧，
-     经几何核算无标签互压、无标签压圆点、最近点对 ≥60（hit 半径 26）。 */
+  /* ---------- 档案数据（12 份完整报道 + 坐标分布）---------- */
   var DATA = [
-    {id:'AI-001', full:'多模态大模型实现跨领域自主推理',                 st:'Verified',   x:64, y: 8, lx: 12, ly:-12},
-    {id:'AI-002', full:'2nm 量产竞赛白热化，先进封装成下一战场',         st:'Active',     x:52, y:88, lx: 14, ly:-12},
-    {id:'AI-003', full:'HBM 产能持续吃紧，存储价格连续第三季回暖',       st:'Monitoring', x:28, y:64, lx:-12, ly:-12},
-    {id:'AI-004', full:'光子计算芯片完成百万级门电路验证，能效比 40 倍', st:'Review',     x:90, y: 5, lx:-12, ly:-12},
-    {id:'AI-005', full:'具身智能机器人进入量产元年，工厂场景率先落地',   st:'Active',     x:40, y:95, lx:-12, ly:-12},
-    {id:'AI-006', full:'端侧大模型成手机新标配，隐私计算架构受追捧',     st:'Active',     x:36, y:74, lx: 12, ly:-12},
-    {id:'AI-007', full:'生成式模型将候选药物筛选周期缩短 60%',           st:'Verified',   x:84, y:31, lx:-12, ly:-12},
-    {id:'AI-008', full:'材料发现模型批量预测新型固态电解质',             st:'Active',     x:75, y:43, lx: 12, ly:-12},
-    {id:'AI-009', full:'AI 辅助多癌早筛纳入多国指南，准确率超 94%',      st:'Verified',   x:54, y:53, lx: 12, ly:-12},
-    {id:'AI-010', full:'脑机接口临床试验：受试者实现意念打字',           st:'Review',     x:95, y:38, lx:-12, ly:-12},
-    {id:'AI-011', full:'开源社区 72 小时复现核心结果，衍生应用超 40 万',  st:'Active',     x:32, y:14, lx: 12, ly:-12},
-    {id:'AI-012', full:'多家云厂商宣布单位推理成本再降 50%',             st:'Priority',   x: 5, y:57, lx: 12, ly:-12}
+    {id:"AI-001", dept:"\u57fa\u7840\u6a21\u578b\u79d1", type:"Model", st:"Verified", date:"2026 / 09 / 16", pri:"A-01", loc:"\u7279\u91cc\u8499 \u00b7 \u603b\u90e8", src:"Frontier Lab", ver:"Rev. 04", title:"\u591a\u6a21\u6001\u5927\u6a21\u578b\u5b9e\u73b0\u8de8\u9886\u57df\u81ea\u4e3b\u63a8\u7406\uff0c\u901a\u7528\u4eba\u5de5\u667a\u80fd\u8fc8\u51fa\u5173\u952e\u4e00\u6b65", sum:"\u672c\u5468\u591a\u5bb6\u7814\u7a76\u673a\u6784\u76f8\u7ee7\u53d1\u5e03\u65b0\u4e00\u4ee3\u591a\u6a21\u6001\u57fa\u7840\u6a21\u578b\u3002\u5728\u6570\u5b66\u8bc1\u660e\u3001\u4ee3\u7801\u751f\u6210\u4e0e\u79d1\u5b66\u5b9e\u9a8c\u8bbe\u8ba1\u7684\u8054\u5408\u4efb\u52a1\u4e2d\uff0c\u6a21\u578b\u9996\u6b21\u5c55\u73b0\u51fa\u65e0\u9700\u4eba\u5de5\u5e72\u9884\u7684\u957f\u94fe\u6761\u63a8\u7406\u80fd\u529b\uff0c\u88ab\u4e1a\u5185\u89c6\u4e3a\u901a\u5411\u901a\u7528\u4eba\u5de5\u667a\u80fd\u7684\u91cd\u8981\u91cc\u7a0b\u7891\u3002", read:"\u503c\u5f97\u8bb0\u5f55\u7684\u4e0d\u662f\u901a\u8fc7\u7387\uff0c\u800c\u662f<b>\u56de\u6eaf\u884c\u4e3a</b>\u2014\u2014\u5f53\u4e00\u6761\u63a8\u7406\u8def\u5f84\u88ab\u8bc1\u4f2a\uff0c\u6a21\u578b\u4f1a\u4e3b\u52a8\u653e\u5f03\u5e76\u6362\u8def\uff0c\u800c\u4e0d\u662f\u7ee7\u7eed\u628a\u8bdd\u8bf4\u5706\u3002\u8fd9\u662f\u4ece\u6a21\u5f0f\u5339\u914d\u8d70\u5411\u89c4\u5212\u7684\u4fe1\u53f7\uff0c\u4e5f\u662f\u672c\u671f\u6240\u6709\u5176\u4ed6\u8fdb\u5c55\u7684\u5171\u540c\u524d\u63d0\u3002", side:[["\u7c7b\u578b", "Model"], ["\u72b6\u6001", "Verified", 1], ["\u4f18\u5148\u7ea7", "A-01"], ["\u65e5\u671f", "2026 / 09 / 16"], ["\u79d1\u5ba4", "\u57fa\u7840\u6a21\u578b\u79d1"], ["\u6765\u6e90", "Frontier Lab"], ["\u7248\u672c", "Rev. 04"]], x:64, y:8, lx:12, ly:-12},
+    {id:"AI-002", dept:"\u7b97\u529b\u6784\u4ef6\u79d1", type:"Substrate", st:"Active", date:"2026 / 09 / 19", pri:"A-02", loc:"\u4ea7\u7ebf \u00b7 \u98ce\u9669\u8bd5\u4ea7", src:"Foundry A / B", ver:"Rev. 04", title:"2nm \u91cf\u4ea7\u7ade\u8d5b\u767d\u70ed\u5316\uff0c\u5148\u8fdb\u5c01\u88c5\u6210 AI \u7b97\u529b\u4e0b\u4e00\u6218\u573a", sum:"\u4e24\u5bb6\u6676\u5706\u5de8\u5934\u76f8\u7ee7\u5ba3\u5e03 2nm \u98ce\u9669\u8bd5\u4ea7\uff0c\u4e1a\u5185\u9884\u8ba1 2027 \u5e74\u5927\u89c4\u6a21\u91cf\u4ea7\uff1b\u9762\u677f\u7ea7\u5c01\u88c5\u6295\u8d44\u989d\u540c\u6bd4\u589e\u957f 45%\uff0c\u8bbe\u5907\u5546\u8ba2\u5355\u5df2\u6392\u81f3\u660e\u5e74\u4e0b\u534a\u5e74\u3002", read:"\u5236\u7a0b\u7ea2\u5229\u6b63\u5728\u8870\u51cf\uff0c\u5355\u4f4d\u7b97\u529b\u6210\u672c\u7684\u4e0b\u964d\u8d8a\u6765\u8d8a\u4f9d\u8d56<b>\u7cfb\u7edf\u7ea7\u521b\u65b0</b>\u2014\u2014\u5c01\u88c5\u3001\u4e92\u8fde\u3001\u4f9b\u7535\u4e0e\u6563\u70ed\u3002\u8fd9\u610f\u5473\u7740\u7ade\u4e89\u91cd\u5fc3\u4ece\"\u80fd\u4e0d\u80fd\u505a\u5c0f\"\u8f6c\u5411\"\u80fd\u4e0d\u80fd\u8fde\u5f97\u5feb\"\uff0c\u4e5f\u662f\u56fd\u4ea7\u94fe\u66f4\u53ef\u80fd\u5efa\u7acb\u4f18\u52bf\u7684\u4f4d\u7f6e\u3002", side:[["\u7c7b\u578b", "Substrate"], ["\u72b6\u6001", "Active", 1], ["\u4f18\u5148\u7ea7", "A-02"], ["\u65e5\u671f", "2026 / 09 / 19"], ["\u79d1\u5ba4", "\u7b97\u529b\u6784\u4ef6\u79d1"], ["\u6765\u6e90", "Foundry A / B"], ["\u7248\u672c", "Rev. 04"]], x:52, y:88, lx:14, ly:-12},
+    {id:"AI-003", dept:"\u7b97\u529b\u6784\u4ef6\u79d1", type:"Memory", st:"Monitoring", date:"2026 / 09 / 16", pri:"B-01", loc:"\u4f9b\u5e94\u94fe", src:"Memory Index", ver:"Rev. 04", title:"HBM \u4ea7\u80fd\u6301\u7eed\u5403\u7d27\uff0c\u5b58\u50a8\u4ef7\u683c\u8fde\u7eed\u7b2c\u4e09\u5b63\u56de\u6696", sum:"AI \u670d\u52a1\u5668\u9700\u6c42\u62c9\u52a8\u4e0b\uff0c\u9ad8\u5e26\u5bbd\u5185\u5b58\u5408\u7ea6\u4ef7\u73af\u6bd4\u4e0a\u6da8 8%\uff0c\u539f\u5382\u4ea7\u80fd\u5df2\u88ab\u9884\u8ba2\u81f3\u660e\u5e74\u4e8c\u5b63\u5ea6\u3002", read:"\u5927\u6a21\u578b\u7684\u74f6\u9888\u6b63\u5728\u4ece\u7b97\u529b\u8f6c\u5411<b>\u5e26\u5bbd</b>\u3002HBM \u6210\u4e3a\u65b0\u7684\u8bae\u4ef7\u4e2d\u5fc3\uff0c\u8fd9\u76f4\u63a5\u5f71\u54cd\u4e00\u4ef6\u4e8b\uff1a\u660e\u5e74\u63a8\u7406\u670d\u52a1\u7684\u62a5\u4ef7\u80fd\u4e0d\u80fd\u7ee7\u7eed\u964d\u3002\u5b83\u6bd4\u4efb\u4f55\u699c\u5355\u90fd\u66f4\u63a5\u8fd1\u5546\u4e1a\u73b0\u5b9e\u3002", side:[["\u7c7b\u578b", "Memory"], ["\u72b6\u6001", "Monitoring"], ["\u4f18\u5148\u7ea7", "B-01"], ["\u65e5\u671f", "2026 / 09 / 16"], ["\u79d1\u5ba4", "\u7b97\u529b\u6784\u4ef6\u79d1"], ["\u6765\u6e90", "Memory Index"], ["\u7248\u672c", "Rev. 04"]], x:28, y:64, lx:-12, ly:-12},
+    {id:"AI-004", dept:"\u7b97\u529b\u6784\u4ef6\u79d1", type:"Photonic", st:"Review", date:"2026 / 09 / 14", pri:"C-02", loc:"\u5b9e\u9a8c\u5ba4 \u00b7 \u539f\u578b", src:"Photonics Grp.", ver:"Rev. 03", title:"\u5149\u5b50\u8ba1\u7b97\u82af\u7247\u5b8c\u6210\u767e\u4e07\u7ea7\u95e8\u7535\u8def\u9a8c\u8bc1\uff0c\u80fd\u6548\u6bd4\u63d0\u5347 40 \u500d", sum:"\u5b9e\u9a8c\u5ba4\u539f\u578b\u5728\u77e9\u9635\u8fd0\u7b97\u4efb\u52a1\u4e0a\u5c55\u73b0\u538b\u5012\u6027\u80fd\u6548\u4f18\u52bf\uff0c\u6709\u671b\u7387\u5148\u843d\u5730\u4e8e AI \u63a8\u7406\u52a0\u901f\u5361\u3002", read:"40 \u500d\u80fd\u6548\u6bd4\u82e5\u80fd\u5728\u63a8\u7406\u573a\u666f\u5151\u73b0\uff0c\u6539\u53d8\u7684\u4e0d\u53ea\u662f\u901f\u5ea6\uff0c\u800c\u662f\u6570\u636e\u4e2d\u5fc3\u7684<b>\u80fd\u8017\u8d26\u672c</b>\u3002\u76ee\u524d\u4ecd\u505c\u7559\u5728\u77e9\u9635\u8fd0\u7b97\uff0c\u8ddd\u79bb\u901a\u7528\u7f16\u7a0b\u6a21\u578b\u8fd8\u6709\u8ddd\u79bb\uff0c\u5df2\u6807\u8bb0\u4e3a\u5f85\u9a8c\u8bc1\u3002", side:[["\u7c7b\u578b", "Photonic"], ["\u72b6\u6001", "Review", 2], ["\u4f18\u5148\u7ea7", "C-02"], ["\u65e5\u671f", "2026 / 09 / 14"], ["\u79d1\u5ba4", "\u7b97\u529b\u6784\u4ef6\u79d1"], ["\u6765\u6e90", "Photonics Grp."], ["\u7248\u672c", "Rev. 03"]], x:90, y:5, lx:-12, ly:-12},
+    {id:"AI-005", dept:"\u5177\u8eab\u5de5\u7a0b\u79d1", type:"Robotics", st:"Active", date:"2026 / 09 / 18", pri:"A-03", loc:"\u4ea7\u7ebf \u00b7 \u5206\u62e3\u88c5\u914d", src:"Robot Front", ver:"Rev. 04", title:"\u5177\u8eab\u667a\u80fd\u673a\u5668\u4eba\u8fdb\u5165\u91cf\u4ea7\u5143\u5e74\uff0c\u5de5\u5382\u573a\u666f\u7387\u5148\u843d\u5730", sum:"\u591a\u5bb6\u5382\u5546\u53d1\u5e03\u901a\u7528\u4eba\u5f62\u673a\u5668\u4eba\u4ea7\u7ebf\u7248\u672c\uff0c\u5206\u62e3\u4e0e\u88c5\u914d\u573a\u666f\u5355\u4f4d\u6548\u7387\u8fbe\u5230\u4eba\u5de5\u7684 1.6 \u500d\uff0c\u5e74\u5185\u51fa\u8d27\u91cf\u9884\u8ba1\u7ffb\u4e09\u500d\uff0c\u4f9b\u5e94\u94fe\u5f00\u59cb\u5411\u6267\u884c\u5668\u4e0e\u4f20\u611f\u5668\u503e\u659c\u3002", read:"1.6 \u500d\u53ea\u662f\u53ca\u683c\u7ebf\u3002\u771f\u6b63\u7684\u95e8\u69db\u662f<b>\u957f\u5c3e\u573a\u666f\u7684\u6cdb\u5316</b>\u2014\u2014\u4e00\u6761\u4ea7\u7ebf\u53ef\u4ee5\u8c03\uff0c\u4e00\u5343\u6761\u4ea7\u7ebf\u4e0d\u80fd\u3002\u8c01\u80fd\u628a\"\u6362\u7ebf\u65f6\u95f4\"\u538b\u5230\u5c0f\u65f6\u7ea7\uff0c\u8c01\u624d\u771f\u6b63\u8de8\u8fc7\u91cf\u4ea7\u95e8\u69db\u3002", side:[["\u7c7b\u578b", "Robotics"], ["\u72b6\u6001", "Active", 1], ["\u4f18\u5148\u7ea7", "A-03"], ["\u65e5\u671f", "2026 / 09 / 18"], ["\u79d1\u5ba4", "\u5177\u8eab\u5de5\u7a0b\u79d1"], ["\u6765\u6e90", "Robot Front"], ["\u7248\u672c", "Rev. 04"]], x:40, y:95, lx:-12, ly:-12},
+    {id:"AI-006", dept:"\u7aef\u4fa7\u4ea4\u4e92\u79d1", type:"Edge", st:"Active", date:"2026 / 09 / 15", pri:"B-02", loc:"\u7ec8\u7aef \u00b7 \u65d7\u8230\u673a\u578b", src:"Device Lab", ver:"Rev. 04", title:"\u7aef\u4fa7\u5927\u6a21\u578b\u6210\u624b\u673a\u65b0\u6807\u914d\uff0c\u9690\u79c1\u8ba1\u7b97\u67b6\u6784\u53d7\u8ffd\u6367", sum:"\u65b0\u4e00\u4ee3\u65d7\u8230\u82af\u7247 NPU \u7b97\u529b\u7ffb\u500d\uff0c\"\u672c\u5730\u8fd0\u884c 70 \u4ebf\u53c2\u6570\u6a21\u578b\"\u6210\u4e3a\u4e2d\u9ad8\u7aef\u673a\u578b\u7684\u7edf\u4e00\u5ba3\u4f20\u8bed\u3002", read:"NPU \u7ffb\u500d\u53ea\u662f\u524d\u63d0\u3002\u7aef\u4fa7\u771f\u6b63\u7684\u7ade\u4e89\u529b\u662f<b>\u79bb\u7ebf\u53ef\u7528 + \u6570\u636e\u4e0d\u51fa\u8bbe\u5907</b>\uff0c\u8fd9\u5c06\u5012\u903c\u6743\u9650\u8bbe\u8ba1\u4e0e\u4ea4\u4e92\u8303\u5f0f\u91cd\u5199\u2014\u2014\u4e91\u7aef\u7684\"\u9ed8\u8ba4\u4e0a\u4f20\"\u903b\u8f91\u5728\u7aef\u4fa7\u4e0d\u6210\u7acb\u3002", side:[["\u7c7b\u578b", "Edge"], ["\u72b6\u6001", "Active", 1], ["\u4f18\u5148\u7ea7", "B-02"], ["\u65e5\u671f", "2026 / 09 / 15"], ["\u79d1\u5ba4", "\u7aef\u4fa7\u4ea4\u4e92\u79d1"], ["\u6765\u6e90", "Device Lab"], ["\u7248\u672c", "Rev. 04"]], x:36, y:74, lx:12, ly:-12},
+    {id:"AI-007", dept:"\u79d1\u5b66\u8003\u5bdf\u79d1", type:"Synthesis", st:"Verified", date:"2026 / 09 / 17", pri:"A-02", loc:"\u5b9e\u9a8c \u00b7 \u4e34\u5e8a\u524d", src:"Bio Science", ver:"Rev. 04", title:"\u751f\u6210\u5f0f\u6a21\u578b\u5c06\u5019\u9009\u836f\u7269\u7b5b\u9009\u5468\u671f\u7f29\u77ed 60%", sum:"\u7814\u7a76\u56e2\u961f\u5229\u7528\u6269\u6563\u6a21\u578b\u76f4\u63a5\u751f\u6210\u86cb\u767d\u8d28\u7ed3\u6784\uff0c\u9996\u4e2a\u8fdb\u5165\u4e34\u5e8a\u524d\u7814\u7a76\u7684\u5019\u9009\u5206\u5b50\u4ec5\u7528 11 \u5468\u5b8c\u6210\u8bbe\u8ba1\u3002", read:"\u8fd9\u4e00\u6b65\u628a\"\u7b5b\u9009\"\u53d8\u6210\u4e86<b>\u8bbe\u8ba1</b>\u3002\u538b\u7f29\u7684\u4e0d\u662f\u7b97\u529b\u65f6\u95f4\uff0c\u800c\u662f\u8bd5\u9519\u6210\u672c\u2014\u2014\u8fc7\u53bb\u8981\u5408\u6210\u51e0\u767e\u4e2a\u5206\u5b50\u624d\u80fd\u7b5b\u5230\u4e00\u4e2a\uff0c\u73b0\u5728\u53ef\u4ee5\u5148\u5728\u7ed3\u6784\u5c42\u9762\u6392\u9664\u300211 \u5468\u662f\u6d41\u7a0b\u4ef7\u503c\uff0c\u4e0d\u662f\u6a21\u578b\u4ef7\u503c\u3002", side:[["\u7c7b\u578b", "Synthesis"], ["\u72b6\u6001", "Verified", 1], ["\u4f18\u5148\u7ea7", "A-02"], ["\u65e5\u671f", "2026 / 09 / 17"], ["\u79d1\u5ba4", "\u79d1\u5b66\u8003\u5bdf\u79d1"], ["\u6765\u6e90", "Bio Science"], ["\u7248\u672c", "Rev. 04"]], x:84, y:31, lx:-12, ly:-12},
+    {id:"AI-008", dept:"\u79d1\u5b66\u8003\u5bdf\u79d1", type:"Material", st:"Active", date:"2026 / 09 / 15", pri:"B-03", loc:"\u5b9e\u9a8c \u00b7 \u5408\u6210\u9a8c\u8bc1", src:"Materials Grp.", ver:"Rev. 04", title:"\u6750\u6599\u53d1\u73b0\u6a21\u578b\u6279\u91cf\u9884\u6d4b\u65b0\u578b\u56fa\u6001\u7535\u89e3\u8d28\uff0c\u9a8c\u8bc1\u95ed\u73af\u7f29\u81f3\u4e24\u5468", sum:"\u6a21\u578b\u4ece\u767e\u4e07\u7ea7\u5019\u9009\u7a7a\u95f4\u4e2d\u7b5b\u51fa 37 \u79cd\u5177\u5907\u6f5c\u529b\u7684\u56fa\u6001\u7535\u89e3\u8d28\u914d\u65b9\uff0c\u5176\u4e2d 9 \u79cd\u5df2\u5728\u5b9e\u9a8c\u5ba4\u5b8c\u6210\u5408\u6210\u9a8c\u8bc1\u3002", read:"AI for Science \u7684\u771f\u5b9e\u4ef7\u503c\u4e0d\u5728\"\u9884\u6d4b\u5f97\u51c6\"\uff0c\u800c\u5728<b>\u7f29\u77ed\u9a8c\u8bc1\u95ed\u73af</b>\u3002\u5f53\"\u63d0\u51fa\u5047\u8bbe\u2014\u5b9e\u9a8c\u9a8c\u8bc1\"\u4ece\u51e0\u4e2a\u6708\u538b\u5230\u4e24\u5468\uff0c\u79d1\u7814\u7684\u8282\u5f8b\u672c\u8eab\u5c31\u88ab\u6539\u5199\u4e86\u3002\u8fd9\u4e5f\u89e3\u91ca\u4e86\u672c\u671f\u56fa\u6001\u7535\u6c60\u8fdb\u5c55\u4e3a\u4f55\u5bc6\u96c6\u51fa\u73b0\u3002", side:[["\u7c7b\u578b", "Material"], ["\u72b6\u6001", "Active", 1], ["\u4f18\u5148\u7ea7", "B-03"], ["\u65e5\u671f", "2026 / 09 / 15"], ["\u79d1\u5ba4", "\u79d1\u5b66\u8003\u5bdf\u79d1"], ["\u6765\u6e90", "Materials Grp."], ["\u7248\u672c", "Rev. 04"]], x:75, y:43, lx:12, ly:-12},
+    {id:"AI-009", dept:"\u533b\u7597\u5e94\u7528\u79d1", type:"Screening", st:"Verified", date:"2026 / 09 / 15", pri:"A-02", loc:"\u591a\u56fd \u00b7 \u4eba\u7fa4\u7b5b\u67e5", src:"Public Health", ver:"Rev. 04", title:"AI \u8f85\u52a9\u591a\u764c\u65e9\u7b5b\u7eb3\u5165\u591a\u56fd\u6307\u5357\uff0c\u65e0\u521b\u68c0\u6d4b\u51c6\u786e\u7387\u8d85 94%", sum:"\u57fa\u4e8e\u6e38\u79bb DNA \u4e0e\u673a\u5668\u5b66\u4e60\u7684\u591a\u764c\u65e9\u7b5b\u65b9\u6848\u6210\u672c\u964d\u81f3\u767e\u5143\u7ea7\uff0c\u8fdb\u5165\u5927\u89c4\u6a21\u4eba\u7fa4\u7b5b\u67e5\u9636\u6bb5\u3002", read:"94% \u7684\u51c6\u786e\u7387\u4e0d\u662f\u5173\u952e\uff0c<b>\u767e\u5143\u7ea7\u6210\u672c</b>\u624d\u662f\u3002\u7eb3\u5165\u6307\u5357\u610f\u5473\u7740\u652f\u4ed8\u8def\u5f84\u88ab\u6253\u901a\uff0c\u6280\u672f\u4ece\"\u80fd\u505a\u5230\"\u53d8\u6210\"\u80fd\u62a5\u9500\"\u2014\u2014\u8fd9\u662f\u533b\u7597 AI \u6700\u5b9e\u8d28\u7684\u4e00\u9053\u95e8\u3002", side:[["\u7c7b\u578b", "Screening"], ["\u72b6\u6001", "Verified", 1], ["\u4f18\u5148\u7ea7", "A-02"], ["\u65e5\u671f", "2026 / 09 / 15"], ["\u79d1\u5ba4", "\u533b\u7597\u5e94\u7528\u79d1"], ["\u6765\u6e90", "Public Health"], ["\u7248\u672c", "Rev. 04"]], x:54, y:53, lx:12, ly:-12},
+    {id:"AI-010", dept:"\u533b\u7597\u5e94\u7528\u79d1", type:"Neural", st:"Review", date:"2026 / 09 / 17", pri:"B-01", loc:"\u4e34\u5e8a \u00b7 \u7b2c 12 \u4f8b", src:"Neural Eng.", ver:"Rev. 03", title:"\u8111\u673a\u63a5\u53e3\u4e34\u5e8a\u8bd5\u9a8c\u53d6\u5f97\u8fdb\u5c55\uff1a\u53d7\u8bd5\u8005\u5b9e\u73b0\u610f\u5ff5\u6253\u5b57", sum:"\u65b0\u4e00\u4ee3\u65e0\u7ebf\u690d\u5165\u8bbe\u5907\u5b8c\u6210\u7b2c 12 \u4f8b\u4eba\u4f53\u8bd5\u9a8c\uff0c\u5e73\u5747\u8f93\u5165\u901f\u5ea6\u8fbe\u6bcf\u5206\u949f 62 \u4e2a\u5b57\u7b26\uff0c\u56e2\u961f\u79f0\u4e0b\u4e00\u9636\u6bb5\u5c06\u9a8c\u8bc1\u957f\u671f\u7a33\u5b9a\u6027\u3002", read:"\u7b2c 12 \u4f8b\u7684\u771f\u6b63\u6307\u6807\u4e0d\u662f 62 \u5b57\uff0c\u800c\u662f<b>\u4fe1\u53f7\u7a33\u5b9a\u6027</b>\u3002\u690d\u5165\u5f0f\u8bbe\u5907\u7684\u80dc\u8d1f\u624b\u5728\u6570\u6708\u5230\u6570\u5e74\u7684\u8870\u51cf\u66f2\u7ebf\uff0c\u901f\u5ea6\u53ef\u4ee5\u8fed\u4ee3\uff0c\u957f\u671f\u53ef\u7528\u6027\u4e0d\u80fd\u3002", side:[["\u7c7b\u578b", "Neural"], ["\u72b6\u6001", "Review", 2], ["\u4f18\u5148\u7ea7", "B-01"], ["\u65e5\u671f", "2026 / 09 / 17"], ["\u79d1\u5ba4", "\u533b\u7597\u5e94\u7528\u79d1"], ["\u6765\u6e90", "Neural Eng."], ["\u7248\u672c", "Rev. 03"]], x:95, y:38, lx:-12, ly:-12},
+    {id:"AI-011", dept:"\u751f\u6001\u5f00\u6e90\u79d1", type:"Open", st:"Active", date:"2026 / 09 / 18", pri:"A-01", loc:"\u793e\u533a \u00b7 \u5168\u7403", src:"Open Commons", ver:"Rev. 04", title:"\u5f00\u6e90\u793e\u533a 72 \u5c0f\u65f6\u590d\u73b0\u6838\u5fc3\u7ed3\u679c\uff0c\u884d\u751f\u5e94\u7528\u8d85 40 \u4e07\u4e2a", sum:"\u6a21\u578b\u6743\u91cd\u4e0e\u8bad\u7ec3\u7ec6\u8282\u516c\u5f00\u540e\uff0c\u793e\u533a\u5728\u4e09\u5929\u5185\u5b8c\u6210\u590d\u73b0\uff0c\u7d2f\u8ba1\u4e0b\u8f7d\u91cf\u7a81\u7834 1200 \u4e07\u6b21\u3002", read:"\u590d\u73b0\u901f\u5ea6\u6b63\u5728\u6210\u4e3a\u6a21\u578b\u80fd\u529b\u7684<b>\u516c\u8ba4\u5ea6\u91cf</b>\uff0c\u4e5f\u662f\u5f00\u6e90\u751f\u6001\u6700\u6709\u6548\u7684\u538b\u529b\u6d4b\u8bd5\u3002\u5b83\u540c\u65f6\u6539\u53d8\u4e86\u7ade\u4e89\u89c4\u5219\u2014\u2014\u4e0d\u518d\u53ea\u6bd4\u699c\u5355\u5206\u6570\uff0c\u800c\u6bd4\"\u591a\u5feb\u80fd\u88ab\u522b\u4eba\u7528\u8d77\u6765\"\u3002", side:[["\u7c7b\u578b", "Open"], ["\u72b6\u6001", "Active", 1], ["\u4f18\u5148\u7ea7", "A-01"], ["\u65e5\u671f", "2026 / 09 / 18"], ["\u79d1\u5ba4", "\u751f\u6001\u5f00\u6e90\u79d1"], ["\u6765\u6e90", "Open Commons"], ["\u7248\u672c", "Rev. 04"]], x:32, y:14, lx:12, ly:-12},
+    {id:"AI-012", dept:"\u5546\u52a1\u6210\u672c\u79d1", type:"Cost", st:"Priority", date:"2026 / 09 / 19", pri:"S", loc:"\u4e91 \u00b7 \u5168\u533a\u57df", src:"Price Monitor", ver:"Rev. 04", title:"\u591a\u5bb6\u4e91\u5382\u5546\u5ba3\u5e03\u5355\u4f4d\u63a8\u7406\u6210\u672c\u518d\u964d 50%", sum:"\u4f34\u968f\u65b0\u4e00\u4ee3\u63a8\u7406\u6846\u67b6\u4e0e\u4e13\u7528\u52a0\u901f\u5361\u94fa\u5f00\uff0c\u4e3b\u6d41\u6a21\u578b\u7684\u5355\u4f4d\u8c03\u7528\u4ef7\u683c\u5728\u4e00\u4e2a\u6708\u5185\u63a5\u8fd1\u8170\u65a9\u3002", read:"\u6210\u672c\u66f2\u7ebf\u6bd4\u4efb\u4f55\u699c\u5355\u90fd\u66f4\u80fd\u51b3\u5b9a\u843d\u5730\u8282\u594f\u3002\u5f53\u63a8\u7406\u4fbf\u5b9c\u5230\u53ef\u4ee5\u968f\u624b\u8c03\u7528\uff0c\u74f6\u9888\u5c31\u4ece\u7b97\u529b\u8f6c\u79fb\u5230<b>\u6570\u636e\u4e0e\u573a\u666f</b>\u2014\u2014\u8fd9\u4e5f\u662f\u672c\u671f\u6240\u6709\u89e3\u8bfb\u7684\u5171\u540c\u7ed3\u8bba\u3002", side:[["\u7c7b\u578b", "Cost"], ["\u72b6\u6001", "Priority", 1], ["\u4f18\u5148\u7ea7", "S"], ["\u65e5\u671f", "2026 / 09 / 19"], ["\u79d1\u5ba4", "\u5546\u52a1\u6210\u672c\u79d1"], ["\u6765\u6e90", "Price Monitor"], ["\u7248\u672c", "Rev. 04"]], x:5, y:57, lx:12, ly:-12}
   ];
   /* OX/W 决定横轴起点与长度；改它必须同步 V1.x、H1.x1/x2、箭头与刻度 path。
      横轴 520 → 555（左 50→30、右 570→585），纵轴 490 不变。 */
@@ -645,15 +867,167 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
     roX.textContent=d.x; roY.textContent=d.y;
     pts.forEach(function(p){ p.classList.toggle('sel', +p.dataset.i===i); });
   }
+  /* ---------- HUD Tooltip 与正文交互接线 ---------- */
+  var stage = document.querySelector('.stage');
+  var tipCard = document.getElementById('tipCard');
+  var tipId = document.getElementById('tipId'), tipSt = document.getElementById('tipSt'),
+      tipDept = document.getElementById('tipDept'), tipTitle = document.getElementById('tipTitle'),
+      tipPri = document.getElementById('tipPri');
+
+  var zoomPortal = document.getElementById('zoomPortal');
+  var articleView = document.getElementById('articleView');
+  var artScroll = document.getElementById('artScroll');
+  var artHeadId = document.getElementById('artHeadId'), artDept = document.getElementById('artDept'),
+      artType = document.getElementById('artType'), artPri = document.getElementById('artPri'),
+      artStatus = document.getElementById('artStatus'), artDate = document.getElementById('artDate'),
+      artTitle = document.getElementById('artTitle'), artSum = document.getElementById('artSum'),
+      artRead = document.getElementById('artRead'), artSideList = document.getElementById('artSideList'),
+      artCoordX = document.getElementById('artCoordX'), artCoordY = document.getElementById('artCoordY');
+
+  var artBack = document.getElementById('artBack'), artFootBack = document.getElementById('artFootBack');
+  var artPrev = document.getElementById('artPrev'), artNext = document.getElementById('artNext');
+  var artFootPrev = document.getElementById('artFootPrev'), artFootNext = document.getElementById('artFootNext');
+
+  var articleOpen = false;
+  var curArticle = 0;
+
+  function showTip(i){
+    if(!phase.classList.contains('phase-2') || articleOpen) return;
+    var d = DATA[i]; if(!d) return;
+    tipId.textContent = d.id;
+    tipSt.textContent = d.st;
+    tipDept.textContent = d.dept;
+    tipTitle.textContent = d.title;
+    tipPri.textContent = d.pri;
+
+    var dot = pts[i].querySelector('.dot');
+    var dr = dot.getBoundingClientRect();
+    var sr = stage.getBoundingClientRect();
+    var cx = dr.left + dr.width/2 - sr.left;
+    var cy = dr.top + dr.height/2 - sr.top;
+
+    tipCard.style.left = cx + 'px';
+    tipCard.style.top = cy + 'px';
+    tipCard.classList.toggle('flip-down', cy < 115);
+    tipCard.classList.add('is-visible');
+  }
+
+  function hideTip(){
+    if(tipCard) tipCard.classList.remove('is-visible');
+  }
+
+  function renderArticle(i){
+    var d = DATA[i]; if(!d) return;
+    curArticle = i;
+    artHeadId.textContent = d.id;
+    artDept.textContent = d.dept;
+    artType.textContent = d.type;
+    artPri.textContent = '优先级 ' + d.pri;
+    artStatus.innerHTML = '<span class="dot"></span>' + d.st;
+    artDate.textContent = d.date + ' · ' + d.ver;
+    artTitle.textContent = d.title;
+    artSum.textContent = d.sum;
+    artRead.innerHTML = d.read;
+    artCoordX.textContent = d.x;
+    artCoordY.textContent = d.y;
+
+    artSideList.innerHTML = (d.side || []).map(function(r){
+      var cls = r[2] === 1 ? 'acid' : '';
+      return '<dt>' + r[0] + '</dt><dd class="' + cls + '">' + r[1] + '</dd>';
+    }).join('') +
+    '<dt>研制地点</dt><dd>' + d.loc + '</dd>' +
+    '<dt>信息来源</dt><dd>' + d.src + '</dd>';
+  }
+
+  function openArticle(i, evt){
+    if(!phase.classList.contains('phase-2')) return;
+    hideTip();
+    var d = DATA[i]; if(!d) return;
+    readout(i);
+    renderArticle(i);
+
+    var vx = innerWidth / 2, vy = innerHeight / 2;
+    if(evt && evt.clientX && evt.clientY){
+      vx = evt.clientX; vy = evt.clientY;
+    } else if(pts[i]){
+      var dot = pts[i].querySelector('.dot');
+      var dr = dot.getBoundingClientRect();
+      vx = dr.left + dr.width / 2;
+      vy = dr.top + dr.height / 2;
+    }
+
+    zoomPortal.style.setProperty('--zx', vx.toFixed(1) + 'px');
+    zoomPortal.style.setProperty('--zy', vy.toFixed(1) + 'px');
+
+    if(reduce){
+      articleView.classList.add('is-open');
+      articleView.setAttribute('aria-hidden','false');
+      articleOpen = true;
+      artScroll.scrollTop = 0;
+      return;
+    }
+
+    zoomPortal.classList.add('is-active');
+    setTimeout(function(){
+      articleView.classList.add('is-open');
+      articleView.setAttribute('aria-hidden','false');
+      articleOpen = true;
+      artScroll.scrollTop = 0;
+    }, 280);
+
+    setTimeout(function(){
+      zoomPortal.classList.remove('is-active');
+    }, 600);
+  }
+
+  function closeArticle(){
+    if(!articleOpen) return;
+    articleView.classList.remove('is-open');
+    articleView.setAttribute('aria-hidden','true');
+    articleOpen = false;
+    if(pts[curArticle]) pts[curArticle].focus();
+  }
+
+  function stepArticle(delta){
+    var next = (curArticle + delta + DATA.length) % DATA.length;
+    renderArticle(next);
+    readout(next);
+    artScroll.scrollTop = 0;
+  }
+
   pts.forEach(function(p){
     var i=+p.dataset.i;
-    p.addEventListener('mouseenter', function(){ readout(i); });
-    p.addEventListener('focus', function(){ readout(i); });
-    p.addEventListener('click', function(e){ e.stopPropagation(); readout(i); });
+    p.addEventListener('mouseenter', function(){ readout(i); showTip(i); });
+    p.addEventListener('mouseleave', function(){ hideTip(); });
+    p.addEventListener('focus', function(){ readout(i); showTip(i); });
+    p.addEventListener('blur', function(){ hideTip(); });
+    p.addEventListener('click', function(e){ e.stopPropagation(); openArticle(i, e); });
     p.addEventListener('keydown', function(e){
-      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); readout(i); }
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); openArticle(i, e); }
     });
   });
+
+  if(tipCard){
+    tipCard.addEventListener('click', function(e){
+      e.stopPropagation();
+      openArticle(cur);
+    });
+  }
+
+  if(roNm){
+    roNm.style.cursor = 'pointer';
+    roNm.addEventListener('click', function(e){
+      e.stopPropagation();
+      openArticle(cur);
+    });
+  }
+
+  if(artBack) artBack.addEventListener('click', closeArticle);
+  if(artFootBack) artFootBack.addEventListener('click', closeArticle);
+  if(artPrev) artPrev.addEventListener('click', function(){ stepArticle(-1); });
+  if(artNext) artNext.addEventListener('click', function(){ stepArticle(1); });
+  if(artFootPrev) artFootPrev.addEventListener('click', function(){ stepArticle(-1); });
+  if(artFootNext) artFootNext.addEventListener('click', function(){ stepArticle(1); });
 
   /* ---------- 转场时间线 ---------- */
   var raf=null, t0=null;
@@ -773,6 +1147,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
     });
   });
   document.addEventListener('keydown', function(e){
+    if(articleOpen){
+      if(e.key==='Escape'||e.key==='Backspace'){ e.preventDefault(); closeArticle(); return; }
+      if(e.key==='ArrowRight'||e.key==='ArrowDown'){ e.preventDefault(); stepArticle(1); return; }
+      if(e.key==='ArrowLeft'||e.key==='ArrowUp'){ e.preventDefault(); stepArticle(-1); return; }
+      return;
+    }
     if(phase.classList.contains('phase-2')){
       var n=null;
       if(e.key==='ArrowRight'||e.key==='ArrowDown') n=(cur+1+DATA.length)%DATA.length;

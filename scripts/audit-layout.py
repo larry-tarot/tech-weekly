@@ -255,6 +255,7 @@ MEASURE_JS = r"""(function(){
   // 4) 可交互元素点击区域
   var targets = [];
   document.querySelectorAll('button, [role="button"], .pt').forEach(function(e){
+    if (e.closest('[aria-hidden="true"]')) return;
     var cs = getComputedStyle(e);
     if (cs.display === 'none' || cs.visibility === 'hidden') return;
     var r = R(e); if (!r) return;
