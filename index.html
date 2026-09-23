@@ -291,22 +291,23 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
 .aside p b{color:var(--ink-0);font-weight:700;background:linear-gradient(transparent 62%,var(--acid-l) 62%)}
 @media (max-width:900px){.aside{display:none}}
 
-/* ---- 左下角读数区 (标签大、竖向排列、3D Z轴旋转) ---- */
-.readout{position:absolute;left:var(--pad);bottom:clamp(16px,3.4vh,40px);z-index:5;
-  display:flex;align-items:flex-end;gap:14px;
+/* ---- 左下角读数区 (标签大、竖向排列、整块向右移、3D Y轴旋转) ---- */
+.readout{position:absolute;left:calc(var(--pad) + clamp(20px, 3.5vw, 64px));bottom:clamp(16px,3.4vh,40px);z-index:5;
+  display:flex;align-items:flex-end;gap:18px;
   opacity:0;transform:translateY(10px);pointer-events:none;
   transition:opacity .45s var(--ease),transform .45s var(--ease)}
 .phase-2 .readout{opacity:1;transform:none;pointer-events:auto;
   transition:opacity .5s var(--ease) 2.9s,transform .5s var(--ease) 2.9s}
 
-.ro-main{display:flex;flex-direction:column;gap:8px;min-width:0}
+.ro-main{display:flex;flex-direction:column;gap:10px;min-width:0}
 .ro-head{display:flex;align-items:baseline;gap:10px}
 .readout .id{font-family:var(--f-shuhei);font-size:clamp(20px,2.4vw,28px);letter-spacing:.04em;
   color:var(--ink-0);font-variant-numeric:tabular-nums;line-height:1}
 .readout .st{font-family:var(--f-misans);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--acid-d);border:1px solid rgba(143,180,0,.45);padding:1px 8px;line-height:1.4}
 
-.keys-col{display:flex;flex-direction:column;gap:7px;perspective:800px}
+.keys-col{display:flex;flex-direction:column;gap:8px;perspective:800px;
+  margin-left:clamp(12px, 1.8vw, 28px)}
 .readout .k-tag{font-family:var(--f-fangyuan);font-size:clamp(13px,1.4vw,15.5px);letter-spacing:.05em;
   color:var(--ink-1);background:rgba(244,245,241,.94);border:1px solid var(--line-2);
   padding:3px 12px 3px 10px;border-left:3.5px solid var(--ink-0);
@@ -895,14 +896,19 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
       roKeys=document.getElementById('roKeys');
   var cur=-1;
   var tagAnimTimer = null;
+  var currentKeysStr = '';
 
   function renderKeys(keys){
     if(!roKeys) return;
+    var newKeysStr = (keys || []).join('|');
+    if(newKeysStr === currentKeysStr) return; // 内容相同绝不重放
+    currentKeysStr = newKeysStr;
+
     if(tagAnimTimer){ clearTimeout(tagAnimTimer); tagAnimTimer = null; }
 
     var oldTags = [].slice.call(roKeys.children);
     if(oldTags.length > 0){
-      // 旧标签沿 Z 轴旋转淡出消失
+      // 旧标签沿 Y 轴旋转淡出消失
       oldTags.forEach(function(el){ el.className = 'k-tag is-anim-out'; });
     }
 
@@ -916,10 +922,11 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
         roKeys.appendChild(tag);
       });
       tagAnimTimer = null;
-    }, oldTags.length > 0 ? 120 : 0);
+    }, oldTags.length > 0 ? 140 : 0);
   }
 
   function readout(i){
+    if(cur === i) return; // 严格节点防重：相同节点绝不二次触发！
     var d=DATA[i]; if(!d) return;
     cur=i;
     roId.textContent=d.id;
@@ -1118,11 +1125,20 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
     artScroll.scrollTop = 0;
   }
 
+  var lastPointerT = 0;
   pts.forEach(function(p){
     var i=+p.dataset.i;
-    p.addEventListener('mouseenter', function(){ readout(i); showTip(i); });
+    p.addEventListener('mouseenter', function(){
+      lastPointerT = performance.now();
+      readout(i);
+      showTip(i);
+    });
     p.addEventListener('mouseleave', function(){ hideTip(); });
-    p.addEventListener('focus', function(){ readout(i); showTip(i); });
+    p.addEventListener('focus', function(){
+      if(performance.now() - lastPointerT < 250 && cur === i) return;
+      readout(i);
+      showTip(i);
+    });
     p.addEventListener('blur', function(){ hideTip(); });
     p.addEventListener('click', function(e){ e.stopPropagation(); openArticle(i, e); });
     p.addEventListener('keydown', function(e){
@@ -1219,6 +1235,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
       p.style.transitionDelay = p.dataset.enterDelay || '0s';   // 复位入场延迟，供下次进入
     });
     cur=-1;
+    currentKeysStr = '';
     /* 重播开场 CSS 动画 */
     document.querySelectorAll('.draw,.pop,.core span,.core .date small i,.core .rule,.core .open,.hud,.foot__grid .c,.legend,.vert-w,.flash')
       .forEach(function(el){
