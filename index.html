@@ -162,22 +162,18 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 /* 十字准线（转场时滑移成长为坐标轴）*/
 .seg{fill:none;stroke:#171A18;stroke-width:2;opacity:.42}
 
-/* 坐标轴附属：刻度 / 数值 / 轴标题 / 箭头 */
+/* 坐标轴附属：刻度 / 轴标题 / 箭头（刻度数值已删） */
 .furn{opacity:0;transition:opacity .45s var(--ease)}
 .phase-2 .furn{opacity:1}
 /* 浮现延迟整体后移 0.55s，跟着拉长后的转场走（坐标轴 2500ms 才到位）*/
 .phase-2 .furn--arrow{transition-delay:2.45s}
 .phase-2 .furn--tick{transition-delay:2.51s}
-.phase-2 .furn--num{transition-delay:2.57s}
 .phase-2 .furn--title{transition-delay:2.63s}
 .tick{stroke:#171A18;stroke-width:1.4;fill:none}
 /* SVG 内字号按 viewBox 600 声明，实际渲染要乘缩放比（.ringwrap 宽 / 600）。
-   375px 视口下缩放比约 0.44，9.5px 只剩 4.2px —— 不可读。
-   用小屏断点直接放大声明值，让渲染结果回到 ~10px。 */
-.ticknum{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.1em;fill:var(--ink-4)}
+   375px 视口下缩放比约 0.44 —— 不可读，小屏断点直接放大声明值。 */
 .axis-title{font-family:var(--f-shuhei);font-size:12.5px;letter-spacing:.18em;fill:var(--ink-0)}
 @media (max-width:640px){
-  .ticknum{font-size:22px}
   .axis-title{font-size:26px}
 }
 
@@ -471,26 +467,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
         <g id="cm-bl"><g class="pop p3" stroke="#171A18" stroke-width="1.6"><path d="M22 564v14h14"/></g></g>
         <g id="cm-br"><g class="pop p3" stroke="#171A18" stroke-width="1.6"><path d="M578 564v14h-14"/></g></g>
 
-        <!-- 坐标轴附属 -->
+        <!-- 坐标轴附属。刻度数值已删（坐标只需体现相对关系，不必精确对应），
+             只留刻度线与轴标题。
+             箭头与刻度随横轴 520→555 同步：左 50→30、右 570→585。 -->
         <g class="furn furn--arrow" fill="#171A18">
-          <path d="M570 540 l-14 -5.5 v11 z"/>
-          <path d="M50 50 l-5.5 14 h11 z"/>
+          <path d="M585 540 l-14 -5.5 v11 z"/>
+          <path d="M30 50 l-5.5 14 h11 z"/>
         </g>
         <g class="furn furn--tick tick">
-          <path d="M50 540 v9M180 540 v9M310 540 v9M440 540 v9M570 540 v9"/>
-          <path d="M50 540 h-9M50 417.5 h-9M50 295 h-9M50 172.5 h-9M50 50 h-9"/>
-        </g>
-        <g class="furn furn--num ticknum">
-          <text x="180" y="560" text-anchor="middle">25</text>
-          <text x="310" y="560" text-anchor="middle">50</text>
-          <text x="440" y="560" text-anchor="middle">75</text>
-          <text x="40" y="421" text-anchor="end">25</text>
-          <text x="40" y="299" text-anchor="end">50</text>
-          <text x="40" y="176" text-anchor="end">75</text>
+          <path d="M30 540 v9M168.8 540 v9M307.5 540 v9M446.3 540 v9M585 540 v9"/>
+          <path d="M30 540 h-9M30 417.5 h-9M30 295 h-9M30 172.5 h-9M30 50 h-9"/>
         </g>
         <g class="furn furn--title">
-          <text class="axis-title" x="562" y="558" text-anchor="end">科技性</text>
-          <text class="axis-title" x="58" y="46">工程性</text>
+          <text class="axis-title" x="577" y="558" text-anchor="end">科技性</text>
+          <text class="axis-title" x="38" y="46">工程性</text>
         </g>
 
         <!-- 档案热点 -->
@@ -564,9 +554,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
      要更慢就拉长时长，不要换更花哨的曲线。 */
   function easeGentle(t){ return t*t*(3-2*t); }
 
-  /* ---------- 坐标轴目标几何（第一象限）---------- */
-  var V0={x:300,y1:-20,y2:620}, V1={x:50,y1:50,y2:540};
-  var H0={y:300,x1:-20,x2:620}, H1={y:540,x1:50,x2:570};
+  /* ---------- 坐标轴目标几何（第一象限）----------
+     x 轴比 y 轴长（555 vs 490），坐标轴的终点必须与下面 OX/W/H 同步，
+     否则转场动画停在旧位置、点却画在新位置。 */
+  var V0={x:300,y1:-20,y2:620}, V1={x:30,y1:50,y2:540};
+  var H0={y:300,x1:-20,x2:620}, H1={y:540,x1:30,x2:585};
   function setV(x,y1,y2){ vline.setAttribute('d','M'+x+' '+y1+' V'+y2); }
   function setH(y,x1,x2){ hline.setAttribute('d','M'+x1+' '+y+' H'+x2); }
 
@@ -589,21 +581,27 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
   ];
 
   /* ---------- 档案数据 ---------- */
+  /* 重排坐标：原值挤在 x 45-95 / y 40-92（右上一坨，左下大片空白）。
+     现按线性拉伸铺到 5-95，左右下角都吃到，相对关系（谁高谁低）不变。
+     lx/ly 按新位置逐个重定标签朝向：全部朝远离其他点的一侧，
+     经几何核算无标签互压、无标签压圆点、最近点对 ≥60（hit 半径 26）。 */
   var DATA = [
-    {id:'AI-001', full:'多模态大模型实现跨领域自主推理',                 st:'Verified',   x:78, y:42, lx: 12, ly:-12},
-    {id:'AI-002', full:'2nm 量产竞赛白热化，先进封装成下一战场',         st:'Active',     x:70, y:88, lx: 14, ly:-12},
-    {id:'AI-003', full:'HBM 产能持续吃紧，存储价格连续第三季回暖',       st:'Monitoring', x:58, y:74, lx: 12, ly:-12},
-    {id:'AI-004', full:'光子计算芯片完成百万级门电路验证，能效比 40 倍', st:'Review',     x:92, y:40, lx:-12, ly:-12},
-    {id:'AI-005', full:'具身智能机器人进入量产元年，工厂场景率先落地',   st:'Active',     x:66, y:92, lx: 14, ly:-12},
-    {id:'AI-006', full:'端侧大模型成手机新标配，隐私计算架构受追捧',     st:'Active',     x:62, y:80, lx: 12, ly:-12},
-    {id:'AI-007', full:'生成式模型将候选药物筛选周期缩短 60%',           st:'Verified',   x:88, y:55, lx: 12, ly:-12},
-    {id:'AI-008', full:'材料发现模型批量预测新型固态电解质',             st:'Active',     x:85, y:62, lx:-12, ly:-12},
-    {id:'AI-009', full:'AI 辅助多癌早筛纳入多国指南，准确率超 94%',      st:'Verified',   x:72, y:68, lx: 12, ly:-12},
-    {id:'AI-010', full:'脑机接口临床试验：受试者实现意念打字',           st:'Review',     x:95, y:58, lx:-12, ly:-12},
-    {id:'AI-011', full:'开源社区 72 小时复现核心结果，衍生应用超 40 万',  st:'Active',     x:60, y:45, lx:-12, ly: 22},
-    {id:'AI-012', full:'多家云厂商宣布单位推理成本再降 50%',             st:'Priority',   x:45, y:70, lx:-12, ly:-12}
+    {id:'AI-001', full:'多模态大模型实现跨领域自主推理',                 st:'Verified',   x:64, y: 8, lx: 12, ly:-12},
+    {id:'AI-002', full:'2nm 量产竞赛白热化，先进封装成下一战场',         st:'Active',     x:52, y:88, lx: 14, ly:-12},
+    {id:'AI-003', full:'HBM 产能持续吃紧，存储价格连续第三季回暖',       st:'Monitoring', x:28, y:64, lx:-12, ly:-12},
+    {id:'AI-004', full:'光子计算芯片完成百万级门电路验证，能效比 40 倍', st:'Review',     x:90, y: 5, lx:-12, ly:-12},
+    {id:'AI-005', full:'具身智能机器人进入量产元年，工厂场景率先落地',   st:'Active',     x:40, y:95, lx:-12, ly:-12},
+    {id:'AI-006', full:'端侧大模型成手机新标配，隐私计算架构受追捧',     st:'Active',     x:36, y:74, lx: 12, ly:-12},
+    {id:'AI-007', full:'生成式模型将候选药物筛选周期缩短 60%',           st:'Verified',   x:84, y:31, lx:-12, ly:-12},
+    {id:'AI-008', full:'材料发现模型批量预测新型固态电解质',             st:'Active',     x:75, y:43, lx: 12, ly:-12},
+    {id:'AI-009', full:'AI 辅助多癌早筛纳入多国指南，准确率超 94%',      st:'Verified',   x:54, y:53, lx: 12, ly:-12},
+    {id:'AI-010', full:'脑机接口临床试验：受试者实现意念打字',           st:'Review',     x:95, y:38, lx:-12, ly:-12},
+    {id:'AI-011', full:'开源社区 72 小时复现核心结果，衍生应用超 40 万',  st:'Active',     x:32, y:14, lx: 12, ly:-12},
+    {id:'AI-012', full:'多家云厂商宣布单位推理成本再降 50%',             st:'Priority',   x: 5, y:57, lx: 12, ly:-12}
   ];
-  var OX=50, OY=540, W=520, H=490;
+  /* OX/W 决定横轴起点与长度；改它必须同步 V1.x、H1.x1/x2、箭头与刻度 path。
+     横轴 520 → 555（左 50→30、右 570→585），纵轴 490 不变。 */
+  var OX=30, OY=540, W=555, H=490;
   function px(x){ return OX + x/100*W; }
   function py(y){ return OY - y/100*H; }
 
