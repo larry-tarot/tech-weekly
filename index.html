@@ -124,6 +124,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 .hud .cell .v{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;color:var(--ink-1)}
 .hud .cell .v.on{color:var(--acid-d)}
 .hud .sp{flex:1;border-right:1px solid var(--line)}
+/* 手机端 HUD 三个格子挤在 375px 里，TW-2026-W38 会被挤成两行。
+   收紧字号/字距并禁止折行，让 .sp 吃掉剩余宽度。 */
+@media (max-width:640px){
+  .hud .cell{gap:6px;padding:11px 8px}
+  .hud .cell .k{font-size:8px;letter-spacing:.12em}
+  .hud .cell .v{font-size:10px;letter-spacing:.02em;white-space:nowrap}
+  .hud .skip{font-size:9px;letter-spacing:.1em;padding:0 10px}
+}
 .hud .skip{font-family:var(--f-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
   color:var(--ink-3);border-left:1px solid var(--line);padding:0 clamp(12px,1.8vw,22px);
   transition:color .18s var(--ease-ui),background-color .18s var(--ease-ui)}
@@ -149,7 +157,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 
 .pop{opacity:0;animation:pop .45s var(--ease-stamp) forwards;transform-box:fill-box;transform-origin:center}
 @keyframes pop{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
-.p1{animation-delay:1.30s}.p2{animation-delay:1.42s}.p3{animation-delay:1.54s}
+.p3{animation-delay:1.54s}   /* .p1/.p2 随辐条与小方块一起删了；四角标记仍用 p3 */
 
 /* 十字准线（转场时滑移成长为坐标轴）*/
 .seg{fill:none;stroke:#171A18;stroke-width:2;opacity:.42}
@@ -187,10 +195,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 .pt.sel .id{fill:var(--ink-0)}
 @media (max-width:640px){.pt .id{display:none}}
 
-/* 环心 */
+/* 底衬：四层圆环与十字准线会从「38」「科技周报」正中间穿过去，
+   实测压字的组合有 6 组（seg 压 5 处文字、r2/r3/r4 各压 2-3 处）——
+   这是封面"乱"的主因之一。
+   不能用椭圆渐变：内容是"高瘦"块，椭圆在上下两端收窄，
+   375px 下日期那个角上底衬只剩 30% 不透明度，横线照样穿过去。
+   改成圆角实底 + 同色辉光羽化边：文字区域不透明度均匀，
+   边缘向外 20 多 px 渐隐，不留硬矩形边（背景只有 3% 网格 + 噪点，压掉看不出来）。 */
 .core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:62%;text-align:center;z-index:3;display:flex;flex-direction:column;align-items:center;
   transition:opacity .3s var(--ease),transform .3s var(--ease)}
+.core::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:calc(100% + 22px);height:calc(100% + 20px);z-index:-1;pointer-events:none;
+  border-radius:26px;background:var(--bg-0);
+  box-shadow:0 0 14px 9px var(--bg-0),0 0 28px 17px rgba(244,245,241,.7)}
 .phase-2 .core{opacity:0;transform:translate(-50%,-50%) translateY(14px)}
 .core .vol{font-family:var(--f-mono);font-size:clamp(9px,1.1vw,10.5px);letter-spacing:.34em;
   text-transform:uppercase;color:var(--ink-3);overflow:hidden;text-indent:.34em}
@@ -444,39 +462,13 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 
           <circle class="draw r4" pathLength="100" cx="300" cy="300" r="122"
                   fill="none" stroke="#A8D000" stroke-width="3"/>
-
-          <g class="pop p1" stroke="rgba(23,26,24,.45)" stroke-width="1">
-            <path d="M300 300 L300 50"/>
-            <path d="M290 58 H310"/>
-          </g>
-
-          <g class="pop p2">
-            <rect x="292" y="42" width="16" height="16" fill="#A8D000"/>
-            <rect x="542" y="292" width="16" height="16" fill="#171A18"/>
-            <rect x="292" y="542" width="16" height="16" fill="#171A18"/>
-            <rect x="42" y="292" width="16" height="16" fill="#A8D000"/>
-          </g>
-
-          <g class="pop p3">
-            <circle cx="300" cy="122" r="7" fill="#171A18"/>
-            <circle cx="422" cy="300" r="7" fill="#A8D000"/>
-            <circle cx="300" cy="422" r="7" fill="#A8D000"/>
-            <circle cx="178" cy="300" r="7" fill="#171A18"/>
-          </g>
         </g>
 
-        <!-- 半径标注文字：随圆环一起淡出 -->
-        <g id="annoteW">
-          <g class="pop p3" font-family="ui-monospace,monospace" font-size="10"
-             fill="#6B736C" letter-spacing="1.6">
-            <text x="316" y="44">R 250</text>
-            <text x="316" y="66" fill="#8FB400">R 212 / ARC 270°</text>
-            <text x="316" y="130">R 122</text>
-            <!-- anchor=end 时 x=20 会让文字向左伸到 viewBox 之外（bboxX=-18），
-                 viewBox 左边界是 0，故改用 start 并右移到 x=32 -->
-            <text x="32" y="292">R 172</text>
-          </g>
-        </g>
+        <!-- 半径标注（R 250 / R 212·ARC 270° / R 122 / R 172）已删：
+             它们既压在圆环笔画上（r1 压 R 212 与 R 172、r3 压 R 122），
+             又和「38」头顶的 Volume 挤成一团，是封面最乱的一处。
+             同批删掉的还有辐条线（与十字准线竖线完全重合、纯重复）
+             以及 4 个小方块 + 4 个小圆点。 -->
 
         <!-- 四角标记：向四周变速移动隐去。
              x 取 18/582 距 viewBox 边只有 18 单位，缩放比 0.577 时右边缘会超出视口 1px。
@@ -567,7 +559,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
   var hline  = document.getElementById('hline');
   var ringG  = document.getElementById('ringGroup');
   var wedge  = document.getElementById('wedge');
-  var annW   = document.getElementById('annoteW');
   var btnSkip = document.getElementById('btnSkip');
   var hudStatus = document.getElementById('hudStatus');
 
@@ -710,7 +701,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
     }
     /* 圆环淡出 700ms：原来在收拢结束的瞬间 1→0，那一刀就是"急停"。 */
     ringG.setAttribute('opacity',(1-clamp((t-1450)/700,0,1)).toFixed(3));
-    annW.setAttribute('opacity', Math.max(0,1-t/280).toFixed(3));
 
     /* ③ 十字准线：竖线左移上伸、横线下移右伸，成为坐标轴（1550 → 2400ms）*/
     var ap=clamp((t-1550)/850,0,1), ea=easeGentle(ap);
@@ -731,7 +721,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
     FLY.forEach(function(f){ f.el.setAttribute('transform',''); f.el.setAttribute('opacity','1'); });
     ringG.setAttribute('transform',''); ringG.setAttribute('opacity','1');
     wedge.setAttribute('d','M300 15 A285 285 0 1 1 300 585 A285 285 0 1 1 300 15 Z');
-    annW.setAttribute('opacity','1');
     setV(V0.x,V0.y1,V0.y2); setH(V0.y,H0.x1,H0.x2);
     vline.setAttribute('stroke-width',2); vline.setAttribute('opacity',.42);
     hline.setAttribute('stroke-width',2); hline.setAttribute('opacity',.42);
@@ -758,7 +747,6 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
     if(reduce){
       FLY.forEach(function(f){ f.el.setAttribute('opacity','0'); });
       ringG.setAttribute('opacity','0');
-      annW.setAttribute('opacity','0');
       setV(V1.x,V1.y1,V1.y2); setH(H1.y,H1.x1,H1.x2);
       vline.setAttribute('stroke-width',3.5); vline.setAttribute('opacity',1);
       hline.setAttribute('stroke-width',3.5); hline.setAttribute('opacity',1);

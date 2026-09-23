@@ -233,11 +233,17 @@ MEASURE_JS = r"""(function(){
   });
 
   // 3) 横向文字裁切
+  //    只在元素真的会剪切时才报（overflow 是 hidden/clip/auto/scroll）。
+  //    overflow:visible 的元素即使 scrollWidth > clientWidth 也不会掉一个像素 ——
+  //    例如 .core 的底衬 ::before 有意比盒子宽 11px（那是垫出来的外边距，不是被切掉的字）。
+  //    真正会剪的 .vol/.no/.zh/.date 都是 overflow:hidden，照旧会被这条抓到。
   var clipped = [];
   document.querySelectorAll('body *').forEach(function(e){
     if (e.closest('[aria-hidden="true"]')) return;
     var cs = getComputedStyle(e);
     if (cs.display === 'none') return;
+    var ov = cs.overflowX;
+    if (!(ov === 'hidden' || ov === 'clip' || ov === 'auto' || ov === 'scroll')) return;
     if (e.scrollWidth > e.clientWidth + 1 && e.clientWidth > 0) {
       var t = (e.textContent||'').trim();
       if (t) clipped.push({sel: String(e.className||e.tagName).slice(0,30), text: t.slice(0,24),
