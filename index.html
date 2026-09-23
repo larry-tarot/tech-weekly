@@ -200,15 +200,14 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
    这是封面"乱"的主因之一。
    不能用椭圆渐变：内容是"高瘦"块，椭圆在上下两端收窄，
    375px 下日期那个角上底衬只剩 30% 不透明度，横线照样穿过去。
-   改成圆角实底 + 同色辉光羽化边：文字区域不透明度均匀，
-   边缘向外 20 多 px 渐隐，不留硬矩形边（背景只有 3% 网格 + 噪点，压掉看不出来）。 */
+   用圆角实底把文字整块挡干净（比盒子各多 11px/10px 作内边距）。
+   边缘不加辉光羽化（用户要求去掉），就是一块硬边圆角底板。 */
 .core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:62%;text-align:center;z-index:3;display:flex;flex-direction:column;align-items:center;
   transition:opacity .3s var(--ease),transform .3s var(--ease)}
 .core::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
   width:calc(100% + 22px);height:calc(100% + 20px);z-index:-1;pointer-events:none;
-  border-radius:26px;background:var(--bg-0);
-  box-shadow:0 0 14px 9px var(--bg-0),0 0 28px 17px rgba(244,245,241,.7)}
+  border-radius:26px;background:var(--bg-0)}
 .phase-2 .core{opacity:0;transform:translate(-50%,-50%) translateY(14px)}
 .core .vol{font-family:var(--f-mono);font-size:clamp(9px,1.1vw,10.5px);letter-spacing:.34em;
   text-transform:uppercase;color:var(--ink-3);overflow:hidden;text-indent:.34em}
