@@ -59,9 +59,16 @@
   --f-mono:ui-monospace,"SF Mono","JetBrains Mono","Roboto Mono",Menlo,Consolas,monospace;
 
   --pad:clamp(14px,3.4vw,52px);
-  --ease:cubic-bezier(0.23,1,0.32,1);
-  --ease-in-out:cubic-bezier(0.7,0,0.3,1);
-  --ease-stamp:cubic-bezier(0.34,1.42,0.64,1);
+  /* 缓动：全部收峰。
+     --ease 原为 cubic-bezier(0.23,1,0.32,1)（easeOutQuint），起步速度是平均值的
+     5 倍 —— 每一次浮现都是"猛冲出去再减速"。改成 0.4,0,0.2,1：两端速度为 0，
+     中段峰值只有 ~1.8 倍，符合"可以加速、但别太快"。
+     --ease-ui 专供 .2s 以内的 hover/按压反馈，那类反馈要跟手，起步不能从 0 爬。
+     --ease-stamp 的过冲 1.42 → 1.18：留一点点弹性，不再冲过头。 */
+  --ease:cubic-bezier(0.4,0,0.2,1);
+  --ease-ui:cubic-bezier(0.2,0,0,1);
+  --ease-in-out:cubic-bezier(0.45,0,0.55,1);
+  --ease-stamp:cubic-bezier(0.34,1.18,0.64,1);
 }
 
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -119,7 +126,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 .hud .sp{flex:1;border-right:1px solid var(--line)}
 .hud .skip{font-family:var(--f-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
   color:var(--ink-3);border-left:1px solid var(--line);padding:0 clamp(12px,1.8vw,22px);
-  transition:color .18s var(--ease),background-color .18s var(--ease)}
+  transition:color .18s var(--ease-ui),background-color .18s var(--ease-ui)}
 
 /* ---- 舞台 ---- */
 .stage{flex:1;display:grid;place-items:center;position:relative;min-height:0;padding:10px;
@@ -150,10 +157,11 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 /* 坐标轴附属：刻度 / 数值 / 轴标题 / 箭头 */
 .furn{opacity:0;transition:opacity .45s var(--ease)}
 .phase-2 .furn{opacity:1}
-.phase-2 .furn--arrow{transition-delay:1.9s}
-.phase-2 .furn--tick{transition-delay:1.96s}
-.phase-2 .furn--num{transition-delay:2.02s}
-.phase-2 .furn--title{transition-delay:2.08s}
+/* 浮现延迟整体后移 0.55s，跟着拉长后的转场走（坐标轴 2500ms 才到位）*/
+.phase-2 .furn--arrow{transition-delay:2.45s}
+.phase-2 .furn--tick{transition-delay:2.51s}
+.phase-2 .furn--num{transition-delay:2.57s}
+.phase-2 .furn--title{transition-delay:2.63s}
 .tick{stroke:#171A18;stroke-width:1.4;fill:none}
 /* SVG 内字号按 viewBox 600 声明，实际渲染要乘缩放比（.ringwrap 宽 / 600）。
    375px 视口下缩放比约 0.44，9.5px 只剩 4.2px —— 不可读。
@@ -169,12 +177,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 .pt{opacity:0;transform:scale(0);transform-box:fill-box;transform-origin:center;
   transition:opacity .32s var(--ease-stamp),transform .32s var(--ease-stamp);cursor:pointer}
 .phase-2 .pt{opacity:1;transform:scale(1)}
-.pt .dot{fill:#171A18;transition:fill .18s var(--ease)}
+.pt .dot{fill:#171A18;transition:fill .18s var(--ease-ui)}
 /* 触屏命中区：圆点本身按 viewBox 缩放后在小屏只有 5-6px，
    加一个不可见圆把点击区域补到 ≥26px（SVG 单位），不影响视觉 */
 .pt .hit{fill:transparent;stroke:none}
 .pt .id{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.08em;fill:var(--ink-3);
-  transition:fill .18s var(--ease)}
+  transition:fill .18s var(--ease-ui)}
 .pt.sel .dot{fill:var(--acid-d)}
 .pt.sel .id{fill:var(--ink-0)}
 @media (max-width:640px){.pt .id{display:none}}
@@ -216,7 +224,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 .core .open button{display:inline-flex;align-items:center;gap:clamp(9px,1.5vmin,14px);
   background:var(--ink-0);color:var(--bg-0);padding:clamp(10px,1.7vmin,14px) clamp(18px,2.8vmin,28px);
   font-family:var(--f-shuhei);font-size:clamp(13px,1.75vmin,16px);letter-spacing:.2em;
-  transition:background-color .2s var(--ease),transform .12s var(--ease)}
+  transition:background-color .2s var(--ease-ui),transform .12s var(--ease-ui)}
 .core .open button i{display:block;width:clamp(14px,2vmin,20px);height:1px;background:currentColor;position:relative;flex:none}
 .core .open button i::after{content:"";position:absolute;right:-1px;top:-3.5px;width:7px;height:7px;
   border-top:1px solid currentColor;border-right:1px solid currentColor;transform:rotate(45deg)}
@@ -236,11 +244,15 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 @media (max-width:900px){.vert-w{display:none}}
 
 /* ---- 第二幕文字层 ---- */
+/* 退场用的过渡写在基础规则上（无延迟），入场的带延迟写在 .phase-2 里。
+   只在 .phase-2 声明 transition 的话，退场那一侧拿不到过渡属性，
+   移除 phase-2 会瞬间消失 —— 又是一处"急停"。 */
 .titleblock{position:absolute;left:var(--pad);top:clamp(14px,2.8vh,32px);
   display:flex;align-items:baseline;gap:clamp(12px,2vw,24px);z-index:4;
-  opacity:0;transform:translateY(12px);pointer-events:none}
+  opacity:0;transform:translateY(12px);pointer-events:none;
+  transition:opacity .45s var(--ease),transform .45s var(--ease)}
 .phase-2 .titleblock{opacity:1;transform:none;pointer-events:auto;
-  transition:opacity .6s var(--ease) 2s,transform .6s var(--ease) 2s}
+  transition:opacity .6s var(--ease) 2.45s,transform .6s var(--ease) 2.45s}
 .titleblock .no{font-family:var(--f-shuhei);font-size:clamp(30px,4vw,48px);line-height:1;
   letter-spacing:-.02em;color:var(--ink-0)}
 .titleblock .no s{text-decoration:none;color:var(--acid)}
@@ -250,9 +262,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
   text-transform:uppercase;color:var(--ink-3)}
 
 .aside{position:absolute;right:var(--pad);top:clamp(14px,2.8vh,32px);max-width:21em;
-  text-align:right;z-index:4;opacity:0;transform:translateY(12px);pointer-events:none}
+  text-align:right;z-index:4;opacity:0;transform:translateY(12px);pointer-events:none;
+  transition:opacity .45s var(--ease),transform .45s var(--ease)}
 .phase-2 .aside{opacity:1;transform:none;pointer-events:auto;
-  transition:opacity .6s var(--ease) 2.1s,transform .6s var(--ease) 2.1s}
+  transition:opacity .6s var(--ease) 2.55s,transform .6s var(--ease) 2.55s}
 .aside .lbl{font-family:var(--f-mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
   color:var(--ink-4);display:block;margin-bottom:8px}
 .aside p{font-family:var(--f-songti);font-size:clamp(12.5px,1.25vw,14px);
@@ -262,16 +275,17 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 
 .readout{position:absolute;left:var(--pad);bottom:clamp(16px,3.4vh,40px);z-index:5;
   display:flex;align-items:stretch;gap:10px;
-  opacity:0;transform:translateY(10px);pointer-events:none}
+  opacity:0;transform:translateY(10px);pointer-events:none;
+  transition:opacity .45s var(--ease),transform .45s var(--ease)}
 .phase-2 .readout{opacity:1;transform:none;pointer-events:auto;
-  transition:opacity .5s var(--ease) 2.45s,transform .5s var(--ease) 2.45s}
+  transition:opacity .5s var(--ease) 2.9s,transform .5s var(--ease) 2.9s}
 /* 上一条/下一条：档案点在小屏只有 3px 半径、最近两点中心距 12.6px，
    几何上不可能做到 44px 触控标准（会把相邻点吞掉）。
    所以触屏改用这对手动翻页按钮 —— 44px 触控目标，且不需要精确瞄准。 */
 .ro-nav{display:none;flex:none;align-self:stretch;width:44px;height:auto;min-height:44px;
   font-family:var(--f-shuhei);font-size:22px;line-height:1;color:var(--ink-1);
   border:1px solid var(--line-2);background:var(--bg-1);
-  transition:background-color .15s var(--ease),color .15s var(--ease)}
+  transition:background-color .15s var(--ease-ui),color .15s var(--ease-ui)}
 .ro-nav:active{background:var(--acid-d);color:var(--ink-0);border-color:var(--acid-d)}
 .ro-body{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;min-width:0}
 @media (hover:hover) and (pointer:fine){
@@ -308,10 +322,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 .foot__grid .c{padding:12px clamp(10px,1.6vw,20px);border-right:1px solid var(--line);
   opacity:0;animation:fade .5s var(--ease) forwards}
 .foot__grid .c:last-child{border-right:0}
-.foot__grid .c:nth-child(1){animation-delay:2.56s}
-.foot__grid .c:nth-child(2){animation-delay:2.64s}
-.foot__grid .c:nth-child(3){animation-delay:2.72s}
-.foot__grid .c:nth-child(4){animation-delay:2.80s}
+.foot__grid .c:nth-child(1){animation-delay:3.01s}
+.foot__grid .c:nth-child(2){animation-delay:3.09s}
+.foot__grid .c:nth-child(3){animation-delay:3.17s}
+.foot__grid .c:nth-child(4){animation-delay:3.25s}
 .foot__grid .k{font-family:var(--f-mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)}
 .foot__grid .v{font-family:var(--f-shuhei);font-size:clamp(13px,1.75vw,18px);letter-spacing:.04em;
   color:var(--ink-0);margin-top:3px;font-variant-numeric:tabular-nums}
@@ -328,7 +342,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
   padding:10px clamp(10px,1.6vw,20px)}
 
 .legend{display:flex;gap:clamp(12px,2vw,22px);flex-wrap:wrap;margin-left:auto;opacity:0;
-  animation:fade .5s var(--ease) 3s forwards}
+  animation:fade .5s var(--ease) 3.45s forwards}
 .legend span{display:flex;align-items:center;gap:7px;font-family:var(--f-mono);font-size:9px;
   letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
 .legend i{display:block;width:18px;height:0;border-top:3px solid var(--ink-0)}
@@ -559,11 +573,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
 
   function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
   function lerp(a,b,t){ return a+(b-a)*t; }
-  function easeOut(t){ return 1-Math.pow(1-t,3); }
-  function easeIO(t){ return t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2; }
-  /* 圆环隐去专用：正弦缓动，峰值速率只有平均值的 1.57 倍（easeIO 是 3 倍）。
-     转场是"收势"不是"发力"，不需要 easeIO 那种先蓄力再冲出去的头尾急加速。 */
-  function easeSettle(t){ return .5-.5*Math.cos(Math.PI*t); }
+  /* 全场唯一缓动：三次平滑步（smoothstep）。
+     要求是"舒缓、可以加速、但别太快" —— 速度从 0 平滑起、平滑停，中段不许冲刺。
+     smoothstep 的峰值速率是平均值的 1.5 倍；easeIO 是 3 倍，
+     就是"中段猛冲后急停"的来源。
+     要更慢就拉长时长，不要换更花哨的曲线。 */
+  function easeGentle(t){ return t*t*(3-2*t); }
 
   /* ---------- 坐标轴目标几何（第一象限）---------- */
   var V0={x:300,y1:-20,y2:620}, V1={x:50,y1:50,y2:540};
@@ -581,11 +596,12 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
   var C = 315;   // 统一隐去的位置：黄绿弧缺口（左上）
 
   /* ---------- 四角标记：向四周变速移动 ---------- */
+  /* 四角外飞：时长统一放慢 1.3 倍。距离不变（78 单位），只降速度。 */
   var FLY = [
-    {el:document.getElementById('cm-tl'), dx:-78, dy:-78, dur:520, delay:0},
-    {el:document.getElementById('cm-tr'), dx: 78, dy:-78, dur:660, delay:60},
-    {el:document.getElementById('cm-bl'), dx:-78, dy: 78, dur:580, delay:30},
-    {el:document.getElementById('cm-br'), dx: 78, dy: 78, dur:450, delay:95}
+    {el:document.getElementById('cm-tl'), dx:-78, dy:-78, dur:676, delay:0},
+    {el:document.getElementById('cm-tr'), dx: 78, dy:-78, dur:858, delay:78},
+    {el:document.getElementById('cm-bl'), dx:-78, dy: 78, dur:754, delay:39},
+    {el:document.getElementById('cm-br'), dx: 78, dy: 78, dur:585, delay:124}
   ];
 
   /* ---------- 档案数据 ---------- */
@@ -618,8 +634,8 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
     g.setAttribute('tabindex','0');
     g.setAttribute('role','button');
     g.setAttribute('aria-label', d.id+' '+d.full+'，科技性 '+d.x+'，工程性 '+d.y);
-    g.style.transitionDelay=(2.2+i*0.04)+'s';
-    g.dataset.enterDelay=(2.2+i*0.04)+'s';   // 记下入场延迟，退场时要清掉
+    g.style.transitionDelay=(2.75+i*0.04)+'s';
+    g.dataset.enterDelay=(2.75+i*0.04)+'s';   // 记下入场延迟，退场时要清掉
     var dot=document.createElementNS(NS,'circle');
     dot.setAttribute('class','dot'); dot.setAttribute('cx',cx); dot.setAttribute('cy',cy); dot.setAttribute('r',6.5);
     var t=document.createElementNS(NS,'text');
@@ -663,39 +679,41 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
     if(t0===null) t0=ts;
     var t=ts-t0;
 
-    /* ① 四角标记：向四周变速移动隐去（0 → 760ms）*/
+    /* ① 四角标记：向四周缓缓移出（0 → 1080ms）*/
     FLY.forEach(function(f){
-      var p=clamp((t-f.delay)/f.dur,0,1), e=easeIO(p);
+      var p=clamp((t-f.delay)/f.dur,0,1), e=easeGentle(p);
       f.el.setAttribute('transform','translate('+(f.dx*e).toFixed(1)+','+(f.dy*e).toFixed(1)+')');
       f.el.setAttribute('opacity',(1-p).toFixed(3));
     });
 
-    /* ② 圆环：旋转 + 遮罩收拢，在 C 位置统一隐去（250 → 1200ms）
-       原为 easeIO(rp)*540：950ms 转 1.5 圈，峰值角速度 1389°/s，
-       肉眼是一团糊，而且转圈本身不承担任何信息（环是对称的，转到哪都一样）。
-       改为 48° 单向缓转 + easeSettle：转幅刚好够看出"在动"，
-       峰值角速度降到 ~140°/s，且始终朝向 C 方向收拢，像被拧过去而不是被甩出去。 */
-    var rp=clamp((t-250)/950,0,1);
+    /* ② 圆环：旋转 + 遮罩收拢 + 整体淡出，在 C 位置消隐（250 → 2100ms）
+       时长 950ms → 1850ms，转角 540° → 32°，曲线统一 easeGentle。
+       消失的主力换成"淡出"而不是"几何收拢到零"：遮罩收拢仍在跑，
+       但圆环从 1450ms 起用 700ms 慢慢退 —— 视觉上是溶解，不是被剪断。
+       遮罩收拢由 300°/450ms（峰值 ~1000°/s）改成 250°/925ms（~405°/s），
+       且后半段已经进淡出，实际可见速度还要更低。 */
+    var rp=clamp((t-250)/1850,0,1);
     if(rp>0){
-      var es=easeSettle(rp);
-      ringG.setAttribute('transform','rotate('+(es*48).toFixed(1)+' 300 300)');
+      var eg=easeGentle(rp);
+      ringG.setAttribute('transform','rotate('+(eg*32).toFixed(1)+' 300 300)');
       var a1,w;
-      if(rp<0.6){
-        var q=rp/0.6;
-        a1=(C-351)+easeOut(q)*351;
-        w=360-60*q;
-      }else{
-        var q2=(rp-0.6)/0.4;
-        w=300*(1-easeIO(q2));
+      if(rp<0.5){                          // 扫入：250 → 1175ms
+        var q=rp/0.5;
+        a1=(C-351)+easeGentle(q)*351;
+        w=360-110*q;
+      }else{                                 // 收拢：1175 → 2100ms
+        var q2=(rp-0.5)/0.5;
+        w=250*(1-easeGentle(q2));
         a1=C;
       }
       wedge.setAttribute('d', wedgePath(a1-w,a1));
-      ringG.setAttribute('opacity', rp>=1?0:1);
     }
+    /* 圆环淡出 700ms：原来在收拢结束的瞬间 1→0，那一刀就是"急停"。 */
+    ringG.setAttribute('opacity',(1-clamp((t-1450)/700,0,1)).toFixed(3));
     annW.setAttribute('opacity', Math.max(0,1-t/280).toFixed(3));
 
-    /* ③ 十字准线：竖线左移上伸、横线下移右伸，成为坐标轴（1150 → 1850ms）*/
-    var ap=clamp((t-1150)/700,0,1), ea=easeIO(ap);
+    /* ③ 十字准线：竖线左移上伸、横线下移右伸，成为坐标轴（1550 → 2400ms）*/
+    var ap=clamp((t-1550)/850,0,1), ea=easeGentle(ap);
     setV(lerp(V0.x,V1.x,ea), lerp(V0.y1,V1.y1,ea), lerp(V0.y2,V1.y2,ea));
     setH(lerp(H0.y,H1.y,ea), lerp(H0.x1,H1.x1,ea), lerp(H0.x2,H1.x2,ea));
     vline.setAttribute('stroke-width',(2+1.5*ea).toFixed(2));
@@ -703,7 +721,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;
     hline.setAttribute('stroke-width',(2+1.5*ea).toFixed(2));
     hline.setAttribute('opacity',(.42+.58*ea).toFixed(3));
 
-    if(t<2000) raf=requestAnimationFrame(frame); else raf=null;
+    if(t<3200) raf=requestAnimationFrame(frame); else raf=null;
   }
 
   /* ---------- 复位 ---------- */

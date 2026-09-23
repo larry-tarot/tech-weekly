@@ -355,8 +355,10 @@ def audit(width, height, label, reduced_motion=False):
         results.append((label, "封面", judge(measure(page))))
 
         # ---- 第二幕：坐标目录 ----
+        # 转场总长 ~3.5s（舒缓化后拉长），等它跑完再测量，
+        # 否则会量到中途状态（档案点还没落位）而误报。
         page.ev("document.getElementById('btnEnter').click()")
-        time.sleep(3.2)
+        time.sleep(4.4)
         results.append((label, "目录", judge(measure(page))))
 
         # ---- 交互：悬停第 5 点 + 键盘序列 ----
@@ -375,7 +377,7 @@ def audit(width, height, label, reduced_motion=False):
         # ---- 返回封面后状态 ----
         # .pt 收起有 .32s transition，等它跑完再测量，
         # 否则会量到 scale() 中间态而误报点击区过小。
-        time.sleep(2.6)
+        time.sleep(3.4)
         extra = []
         ph = page.ev("document.getElementById('phase').className")
         extra.append(("PASS" if ph == "phase" else "FAIL", f"Esc 后回到封面：{ph}"))
