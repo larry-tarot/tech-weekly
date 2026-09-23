@@ -315,29 +315,29 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
   transform-origin:center center;backface-visibility:hidden}
 .readout .k-tag:first-child{border-left-color:var(--acid-d);font-weight:700}
 
-/* 3D 效果 Z 轴旋转一圈 + 数量动态增隐 */
+/* 3D 效果 Y 轴（从上到下的纵向轴）水平翻转一整圈 + 数量动态增隐 */
 @keyframes tagSpinIn {
   0% {
     opacity: 0;
-    transform: perspective(600px) scale(0.65) rotateZ(-360deg);
+    transform: perspective(700px) scale(0.7) rotateY(-360deg);
   }
-  65% {
-    opacity: 0.9;
-    transform: perspective(600px) scale(1.06) rotateZ(12deg);
+  60% {
+    opacity: 0.95;
+    transform: perspective(700px) scale(1.04) rotateY(15deg);
   }
   100% {
     opacity: 1;
-    transform: perspective(600px) scale(1) rotateZ(0deg);
+    transform: perspective(700px) scale(1) rotateY(0deg);
   }
 }
 @keyframes tagFadeOut {
   0% {
     opacity: 1;
-    transform: perspective(600px) scale(1) rotateZ(0deg);
+    transform: perspective(700px) scale(1) rotateY(0deg);
   }
   100% {
     opacity: 0;
-    transform: perspective(600px) scale(0.65) rotateZ(360deg);
+    transform: perspective(700px) scale(0.7) rotateY(360deg);
   }
 }
 .k-tag.is-anim-in{
