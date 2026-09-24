@@ -158,6 +158,8 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
   perspective:1000px;transform-style:preserve-3d}
 .ringwrap>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;
   transform-origin:center center;transition:transform .75s var(--ease)}
+/* 大屏才放大中间坐标区（小/中屏保持 520px 安全基线，避免横栏溢出） */
+@media (min-width:1024px){.ringwrap{width:min(88%,660px)}}
 
 /* 隐藏 Z 轴：旋转时显现 */
 .furn--zaxis{opacity:0;transition:opacity .5s var(--ease)}
@@ -177,7 +179,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
 .phase-2 .pt{opacity:1}
 .pt .dot{fill:#171A18;transition:fill .18s var(--ease-ui),opacity .25s var(--ease)}
 .pt .hit{fill:transparent;stroke:none}
-.pt .id{font-family:var(--f-misans);font-size:9.5px;letter-spacing:.08em;fill:var(--ink-3);
+.pt .id{font-family:var(--f-misans);font-size:12.5px;letter-spacing:.08em;fill:var(--ink-3);
   transition:fill .18s var(--ease-ui),opacity .25s var(--ease)}
 .pt.sel .dot{fill:var(--acid-d)}
 .pt.sel .id{fill:var(--ink-0)}
@@ -230,7 +232,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
 .p3{animation-delay:1.54s}   /* .p1/.p2 随辐条与小方块一起删了；四角标记仍用 p3 */
 
 /* 十字准线（转场时滑移成长为坐标轴）*/
-.seg{fill:none;stroke:#171A18;stroke-width:2;opacity:.42}
+.seg{fill:none;stroke:#171A18;stroke-width:3;opacity:.46}
 
 /* 坐标轴附属：刻度 / 轴标题 / 箭头（刻度数值已删） */
 .furn{opacity:0;transition:opacity .45s var(--ease)}
@@ -239,7 +241,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
 .phase-2 .furn--arrow{transition-delay:2.45s}
 .phase-2 .furn--tick{transition-delay:2.51s}
 .phase-2 .furn--title{transition-delay:2.63s}
-.tick{stroke:#171A18;stroke-width:1.4;fill:none}
+.tick{stroke:#171A18;stroke-width:2.1;fill:none}
 /* SVG 内字号按 viewBox 600 声明，实际渲染要乘缩放比（.ringwrap 宽 / 600）。
    375px 视口下缩放比约 0.44 —— 不可读，小屏断点直接放大声明值。 */
 .axis-title{font-family:var(--f-shuhei);font-size:12.5px;letter-spacing:.18em;fill:var(--ink-0)}
@@ -970,27 +972,27 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
     g.style.transform = 'translate(' + cx.toFixed(1) + 'px,' + cy.toFixed(1) + 'px)';
 
     var dot=document.createElementNS(NS,'circle');
-    dot.setAttribute('class','dot'); dot.setAttribute('cx',0); dot.setAttribute('cy',0); dot.setAttribute('r',6.5);
+    dot.setAttribute('class','dot'); dot.setAttribute('cx',0); dot.setAttribute('cy',0); dot.setAttribute('r',9);
     var t=document.createElementNS(NS,'text');
     t.setAttribute('class','id'); t.setAttribute('x',d.lx); t.setAttribute('y',d.ly);
     t.setAttribute('text-anchor', d.lx<0?'end':'start');
     t.textContent=d.id;
     var hit=document.createElementNS(NS,'circle');
-    hit.setAttribute('class','hit'); hit.setAttribute('cx',0); hit.setAttribute('cy',0); hit.setAttribute('r',26);
+    hit.setAttribute('class','hit'); hit.setAttribute('cx',0); hit.setAttribute('cy',0); hit.setAttribute('r',32);
     g.appendChild(hit); g.appendChild(dot); g.appendChild(t);
 
     /* 横榜条目组件 (在 3D 模式下展开) */
     var card = document.createElementNS(NS, 'g');
     card.setAttribute('class', 'bar-card');
     var rawTitle = d.full || d.title;
-    var dispTitle = d.id + ' ' + rawTitle.slice(0, 18) + (rawTitle.length > 18 ? '...' : '');
+    var dispTitle = d.id + ' ' + rawTitle.slice(0, 20) + (rawTitle.length > 20 ? '...' : '');
     card.innerHTML =
-      '<rect class=\"bar-bg\" x=\"0\" y=\"-14\" width=\"460\" height=\"28\" rx=\"2\" fill=\"rgba(244,245,241,0.95)\" stroke=\"var(--line-2)\" stroke-width=\"1\"/>' +
-      '<rect class=\"bar-track\" x=\"46\" y=\"7\" width=\"340\" height=\"3\" fill=\"rgba(23,26,24,0.08)\"/>' +
-      '<rect class=\"bar-fill\" x=\"46\" y=\"7\" width=\"0\" height=\"3\" fill=\"var(--acid)\"/>' +
-      '<text class=\"bar-rank\" x=\"10\" y=\"4\" font-family=\"var(--f-misans)\" font-size=\"11\" font-weight=\"700\" fill=\"var(--acid-d)\">#01</text>' +
-      '<text class=\"bar-title\" x=\"46\" y=\"2\" font-family=\"var(--f-fangyuan)\" font-size=\"11.5\" fill=\"var(--ink-0)\">' + dispTitle + '</text>' +
-      '<text class=\"bar-score\" x=\"448\" y=\"3\" text-anchor=\"end\" font-family=\"var(--f-misans)\" font-size=\"11\" font-weight=\"700\" fill=\"var(--ink-1)\">' + d.x + '</text>';
+      '<rect class=\"bar-bg\" x=\"0\" y=\"-17.5\" width=\"460\" height=\"35\" rx=\"2\" fill=\"rgba(244,245,241,0.95)\" stroke=\"var(--line-2)\" stroke-width=\"1\"/>' +
+      '<rect class=\"bar-track\" x=\"46\" y=\"10\" width=\"340\" height=\"4.5\" fill=\"rgba(23,26,24,0.08)\"/>' +
+      '<rect class=\"bar-fill\" x=\"46\" y=\"10\" width=\"0\" height=\"4.5\" fill=\"var(--acid)\"/>' +
+      '<text class=\"bar-rank\" x=\"11\" y=\"5\" font-family=\"var(--f-misans)\" font-size=\"14\" font-weight=\"700\" fill=\"var(--acid-d)\">#01</text>' +
+      '<text class=\"bar-title\" x=\"48\" y=\"3\" font-family=\"var(--f-fangyuan)\" font-size=\"14.5\" fill=\"var(--ink-0)\">' + dispTitle + '</text>' +
+      '<text class=\"bar-score\" x=\"448\" y=\"4\" text-anchor=\"end\" font-family=\"var(--f-misans)\" font-size=\"14\" font-weight=\"700\" fill=\"var(--ink-1)\">' + d.x + '</text>';
     g.appendChild(card);
 
     document.getElementById('points').appendChild(g);
@@ -1367,10 +1369,10 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
       var dn = Math.max(0, Math.min(1, w / 600 + 0.5));         // 0=远（指屏幕内）,0.5=在屏平面,1=近（指向屏幕外）
       var op = baseOp * (0.08 + 0.92 * open) * (0.42 + 0.58 * dn);
       lineEl.style.opacity = op.toFixed(2);
-      lineEl.style.strokeWidth = (1.3 + 2.0 * dn).toFixed(2);   // 远细近粗
+      lineEl.style.strokeWidth = (1.8 + 2.6 * dn).toFixed(2);   // 远细近粗
       if(arrowEl){
         var ang = Math.atan2(y2 - oy, x2 - ox);
-        var s = 11 + 7 * dn;
+        var s = 15 + 9 * dn;
         var bx = x2 - s * Math.cos(ang - 0.42), by = y2 - s * Math.sin(ang - 0.42);
         var cx2 = x2 - s * Math.cos(ang + 0.42), cy2 = y2 - s * Math.sin(ang + 0.42);
         arrowEl.setAttribute('d', 'M' + x2.toFixed(1) + ' ' + y2.toFixed(1) + ' L' + bx.toFixed(1) + ' ' + by.toFixed(1) + ' L' + cx2.toFixed(1) + ' ' + cy2.toFixed(1) + ' Z');
@@ -1491,7 +1493,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
     });
 
     // 垂直等距槽位对齐并展开横榜
-    var startX = 70, startY = 70, slotH = 37.5;
+    var startX = 68, startY = 46, slotH = 44;
     sortedIndices.forEach(function(origIdx, rank){
       var p = pts[origIdx];
       var d = DATA[origIdx];
