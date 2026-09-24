@@ -738,7 +738,11 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
           <path id="tickV" d="M30 540 h-9M30 417.5 h-9M30 295 h-9M30 172.5 h-9M30 50 h-9"/>
         </g>
 
-        <!-- 坐标轴文字标签已移除；进入单榜的按钮改为图区右上角的胶囊按钮(.board-btns) -->
+        <!-- 轴名：科技性 / 工程性（只留轴名，不带按钮提示与空数轴；单榜进入按钮见 .board-btns） -->
+        <g class="furn furn--title">
+          <text class="axis-title" id="titleTech" text-anchor="start">科技性</text>
+          <text class="axis-title" id="titleEng" text-anchor="start">工程性</text>
+        </g>
 
         <!-- 档案热点 -->
         <g id="points"></g>
