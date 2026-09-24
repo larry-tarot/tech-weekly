@@ -151,8 +151,71 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
    原来用 70vmin 会把手机竖屏的环压得很小（375px 下只有 263px，而舞台可用 355px）。
    改用 min(88%, 520px) 让环吃满舞台宽度，短边（横屏矮高度）时由 aspect-ratio:1
    自动收敛，不会溢出。 */
-.ringwrap{position:relative;width:min(88%,520px);max-height:100%;aspect-ratio:1;flex:none}
-.ringwrap>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+/* ==========================================================================
+   3D 空间坐标系与单指数横榜模式 (3D Leaderboard Mode)
+   ========================================================================== */
+.ringwrap{position:relative;width:min(88%,520px);max-height:100%;aspect-ratio:1;flex:none;
+  perspective:1000px;transform-style:preserve-3d}
+.ringwrap>svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible;
+  transform-origin:center center;transition:transform .75s var(--ease)}
+
+/* 隐藏 Z 轴：旋转时显现 */
+.furn--zaxis{opacity:0;transition:opacity .5s var(--ease)}
+.mode-board-tech .furn--zaxis,
+.mode-board-eng .furn--zaxis{opacity:.85}
+
+/* 轴标题可点击交互 */
+.axis-btn{cursor:pointer}
+.axis-btn .hit{fill:transparent;stroke:none}
+.axis-btn:hover .axis-title{fill:var(--acid-d)}
+.axis-mode-hint{font-family:var(--f-misans);font-size:8.5px;letter-spacing:.06em;fill:var(--acid-d);font-weight:400}
+.mode-board-tech #btnAxisTech .axis-title,
+.mode-board-eng #btnAxisEng .axis-title{fill:var(--acid-d)}
+
+/* 散点与横榜卡片的平滑蜕变 */
+.pt{opacity:0;transition:opacity .32s var(--ease-stamp),transform .68s var(--ease);cursor:pointer}
+.phase-2 .pt{opacity:1}
+.pt .dot{fill:#171A18;transition:fill .18s var(--ease-ui),opacity .25s var(--ease)}
+.pt .hit{fill:transparent;stroke:none}
+.pt .id{font-family:var(--f-misans);font-size:9.5px;letter-spacing:.08em;fill:var(--ink-3);
+  transition:fill .18s var(--ease-ui),opacity .25s var(--ease)}
+.pt.sel .dot{fill:var(--acid-d)}
+.pt.sel .id{fill:var(--ink-0)}
+@media (max-width:640px){.pt .id{display:none}}
+
+/* 横榜卡片初始态 (2D模式下隐藏) */
+.bar-card{opacity:0;pointer-events:none;transform-origin:left center;
+  transform:scaleX(.2);transition:opacity .28s var(--ease),transform .45s var(--ease)}
+
+/* 横榜激活时：散点收拢，长卡片水平拉伸展开 */
+.mode-board-tech .pt .dot,
+.mode-board-eng .pt .dot,
+.mode-board-tech .pt .id,
+.mode-board-eng .pt .id{opacity:0;pointer-events:none}
+.mode-board-tech .bar-card,
+.mode-board-eng .bar-card{opacity:1;pointer-events:auto;transform:scaleX(1)}
+
+/* 3D 模式下压低底层背景线条干扰 */
+.mode-board-tech .seg, .mode-board-eng .seg,
+.mode-board-tech .furn--tick, .mode-board-eng .furn--tick{opacity:.18}
+
+/* 3D 横榜模式下，SVG 画布保持正交观察平面，完全由矢量数学投影驱动轴向，避免额外倾斜造成轴线歪斜 */
+.ringwrap.mode-board-tech>svg,
+.ringwrap.mode-board-eng>svg{
+  transform: none;
+}
+
+/* 3D 模式下隐藏原有二维象限的孤立刻度 */
+.mode-board-tech #axisTicks,
+.mode-board-eng #axisTicks{
+  opacity: 0;
+  transition: opacity .3s var(--ease);
+}
+
+/* 横榜进度条动画 */
+.bar-fill{transition:width .65s var(--ease)}
+.pt:hover .bar-bg,.pt.sel .bar-bg{stroke:var(--acid-d);stroke-width:1.5;fill:rgba(255,255,255,.98)}
+.pt:hover .bar-title,.pt.sel .bar-title{fill:var(--acid-d)}
 
 /* 粗线绘制 */
 .draw{stroke-dasharray:100;stroke-dashoffset:100;animation:draw 1000ms var(--ease) forwards}
@@ -183,20 +246,6 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
 @media (max-width:640px){
   .axis-title{font-size:26px}
 }
-
-/* 档案点 */
-.pt{opacity:0;transform:scale(0);transform-box:fill-box;transform-origin:center;
-  transition:opacity .32s var(--ease-stamp),transform .32s var(--ease-stamp);cursor:pointer}
-.phase-2 .pt{opacity:1;transform:scale(1)}
-.pt .dot{fill:#171A18;transition:fill .18s var(--ease-ui)}
-/* 触屏命中区：圆点本身按 viewBox 缩放后在小屏只有 5-6px，
-   加一个不可见圆把点击区域补到 ≥26px（SVG 单位），不影响视觉 */
-.pt .hit{fill:transparent;stroke:none}
-.pt .id{font-family:var(--f-misans);font-size:9.5px;letter-spacing:.08em;fill:var(--ink-3);
-  transition:fill .18s var(--ease-ui)}
-.pt.sel .dot{fill:var(--acid-d)}
-.pt.sel .id{fill:var(--ink-0)}
-@media (max-width:640px){.pt .id{display:none}}
 
 /* 环心 */
 /* 底衬已按用户要求去掉（原来它是圆环/十字准线从「38」「科技周报」
@@ -629,9 +678,10 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
           </mask>
         </defs>
 
-        <!-- 十字准线（转场后滑移成长为坐标轴）-->
+        <!-- 十字准线（转场后滑移成长为坐标轴），与垂直屏幕的空数轴 -->
         <path id="vline" class="seg" d="M300 -20 V620"/>
         <path id="hline" class="seg" d="M-20 300 H620"/>
+        <path id="zline" class="seg" d="M30 540 L30 540" stroke-dasharray="5 4" opacity="0"/>
 
         <!-- 圆环组：旋转 + 遮罩收拢后统一隐去 -->
         <g id="ringGroup" mask="url(#rmask)">
@@ -666,16 +716,28 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
              只留刻度线与轴标题。
              箭头与刻度随横轴 520→555 同步：左 50→30、右 570→585。 -->
         <g class="furn furn--arrow" fill="#171A18">
-          <path d="M585 540 l-14 -5.5 v11 z"/>
-          <path d="M30 50 l-5.5 14 h11 z"/>
+          <path id="arrowTech" d="M585 540 l-14 -5.5 v11 z"/>
+          <path id="arrowEng" d="M30 50 l-5.5 14 h11 z"/>
+          <path id="arrowEmpty" d="M30 540 l0 0 z" opacity="0"/>
         </g>
-        <g class="furn furn--tick tick">
-          <path d="M30 540 v9M168.8 540 v9M307.5 540 v9M446.3 540 v9M585 540 v9"/>
-          <path d="M30 540 h-9M30 417.5 h-9M30 295 h-9M30 172.5 h-9M30 50 h-9"/>
+        <g class="furn furn--tick tick" id="axisTicks">
+          <path id="tickH" d="M30 540 v9M168.8 540 v9M307.5 540 v9M446.3 540 v9M585 540 v9"/>
+          <path id="tickV" d="M30 540 h-9M30 417.5 h-9M30 295 h-9M30 172.5 h-9M30 50 h-9"/>
         </g>
+
         <g class="furn furn--title">
-          <text class="axis-title" x="577" y="558" text-anchor="end">科技性</text>
-          <text class="axis-title" x="38" y="46">工程性</text>
+          <g class="axis-btn" id="btnAxisTech" role="button" tabindex="0" aria-label="切换科技性3D排行榜">
+            <rect class="hit" x="435" y="534" width="150" height="36"/>
+            <text class="axis-title" id="titleTech" x="577" y="558" text-anchor="end">科技性 <tspan class="axis-mode-hint">[3D横榜 ▾]</tspan></text>
+          </g>
+          <g class="axis-btn" id="btnAxisEng" role="button" tabindex="0" aria-label="切换工程性3D排行榜">
+            <rect class="hit" x="30" y="24" width="150" height="36"/>
+            <text class="axis-title" id="titleEng" x="38" y="46">工程性 <tspan class="axis-mode-hint">[3D横榜 ▾]</tspan></text>
+          </g>
+          <!-- 空数轴标签 (旋转显现) -->
+          <g id="labelAxisEmpty" opacity="0">
+            <text class="axis-title" id="titleEmpty" x="30" y="540" fill="var(--ink-3)" font-size="10.5" letter-spacing="1">空数轴 // EMPTY AXIS</text>
+          </g>
         </g>
 
         <!-- 档案热点 -->
@@ -888,7 +950,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
   function px(x){ return OX + x/100*W; }
   function py(y){ return OY - y/100*H; }
 
-  /* ---------- 生成档案点 ---------- */
+  /* ---------- 生成档案点 (刚体坐标定位) ---------- */
   var NS='http://www.w3.org/2000/svg';
   var pts=[];
   DATA.forEach(function(d,i){
@@ -900,18 +962,36 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
     g.setAttribute('role','button');
     g.setAttribute('aria-label', d.id+' '+d.full+'，科技性 '+d.x+'，工程性 '+d.y);
     g.style.transitionDelay=(2.75+i*0.04)+'s';
-    g.dataset.enterDelay=(2.75+i*0.04)+'s';   // 记下入场延迟，退场时要清掉
+    g.dataset.enterDelay=(2.75+i*0.04)+'s';
+    g.dataset.origX = cx;
+    g.dataset.origY = cy;
+    // 初始位置设在 (cx, cy)
+    g.style.transform = 'translate(' + cx.toFixed(1) + 'px,' + cy.toFixed(1) + 'px)';
+
     var dot=document.createElementNS(NS,'circle');
-    dot.setAttribute('class','dot'); dot.setAttribute('cx',cx); dot.setAttribute('cy',cy); dot.setAttribute('r',6.5);
+    dot.setAttribute('class','dot'); dot.setAttribute('cx',0); dot.setAttribute('cy',0); dot.setAttribute('r',6.5);
     var t=document.createElementNS(NS,'text');
-    t.setAttribute('class','id'); t.setAttribute('x',cx+d.lx); t.setAttribute('y',cy+d.ly);
+    t.setAttribute('class','id'); t.setAttribute('x',d.lx); t.setAttribute('y',d.ly);
     t.setAttribute('text-anchor', d.lx<0?'end':'start');
     t.textContent=d.id;
-    /* 触屏命中区：放在最底层，圆点（6.5 单位）在小屏缩放后只有 5-6px，
-       补一个 26 单位的透明圆，让点击区域在 320px 视口也有 ≥11px */
     var hit=document.createElementNS(NS,'circle');
-    hit.setAttribute('class','hit'); hit.setAttribute('cx',cx); hit.setAttribute('cy',cy); hit.setAttribute('r',26);
+    hit.setAttribute('class','hit'); hit.setAttribute('cx',0); hit.setAttribute('cy',0); hit.setAttribute('r',26);
     g.appendChild(hit); g.appendChild(dot); g.appendChild(t);
+
+    /* 横榜条目组件 (在 3D 模式下展开) */
+    var card = document.createElementNS(NS, 'g');
+    card.setAttribute('class', 'bar-card');
+    var rawTitle = d.full || d.title;
+    var dispTitle = d.id + ' ' + rawTitle.slice(0, 18) + (rawTitle.length > 18 ? '...' : '');
+    card.innerHTML =
+      '<rect class=\"bar-bg\" x=\"0\" y=\"-14\" width=\"460\" height=\"28\" rx=\"2\" fill=\"rgba(244,245,241,0.95)\" stroke=\"var(--line-2)\" stroke-width=\"1\"/>' +
+      '<rect class=\"bar-track\" x=\"46\" y=\"7\" width=\"340\" height=\"3\" fill=\"rgba(23,26,24,0.08)\"/>' +
+      '<rect class=\"bar-fill\" x=\"46\" y=\"7\" width=\"0\" height=\"3\" fill=\"var(--acid)\"/>' +
+      '<text class=\"bar-rank\" x=\"10\" y=\"4\" font-family=\"var(--f-misans)\" font-size=\"11\" font-weight=\"700\" fill=\"var(--acid-d)\">#01</text>' +
+      '<text class=\"bar-title\" x=\"46\" y=\"2\" font-family=\"var(--f-fangyuan)\" font-size=\"11.5\" fill=\"var(--ink-0)\">' + dispTitle + '</text>' +
+      '<text class=\"bar-score\" x=\"448\" y=\"3\" text-anchor=\"end\" font-family=\"var(--f-misans)\" font-size=\"11\" font-weight=\"700\" fill=\"var(--ink-1)\">' + d.x + '</text>';
+    g.appendChild(card);
+
     document.getElementById('points').appendChild(g);
     pts.push(g);
   });
@@ -1229,6 +1309,199 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
   if(artFootPrev) artFootPrev.addEventListener('click', function(){ stepArticle(-1); });
   if(artFootNext) artFootNext.addEventListener('click', function(){ stepArticle(1); });
 
+  /* ---------- 3D 空间坐标系与排行榜切换 ---------- */
+  function rodrigues(v, k, theta){
+    var c = Math.cos(theta), s = Math.sin(theta);
+    var dot = v[0]*k[0] + v[1]*k[1] + v[2]*k[2];
+    var cx = k[1]*v[2] - k[2]*v[1];
+    var cy = k[2]*v[0] - k[0]*v[2];
+    var cz = k[0]*v[1] - k[1]*v[0];
+    return [
+      v[0]*c + cx*s + k[0]*dot*(1 - c),
+      v[1]*c + cy*s + k[1]*dot*(1 - c),
+      v[2]*c + cz*s + k[2]*dot*(1 - c)
+    ];
+  }
+
+  var current3DMode = 'none'; // 'none' | 'tech' | 'eng'
+  var ringwrap = document.querySelector('.ringwrap');
+  var btnAxisTech = document.getElementById('btnAxisTech');
+  var btnAxisEng = document.getElementById('btnAxisEng');
+  var labelAxisEmpty = document.getElementById('labelAxisEmpty');
+  var titleTech = document.getElementById('titleTech');
+  var titleEng = document.getElementById('titleEng');
+  var titleEmpty = document.getElementById('titleEmpty');
+  var arrowTech = document.getElementById('arrowTech');
+  var arrowEng = document.getElementById('arrowEng');
+  var arrowEmpty = document.getElementById('arrowEmpty');
+  var zline = document.getElementById('zline');
+
+  var axis3DAnimRaf = null;
+  var curOx = 30, curOy = 540;
+  var curRotAngle = 0;
+  var curK = [1, 0, 0];
+
+  function updateAxesGeometry(ox, oy, theta, k){
+    var uT = rodrigues([1, 0, 0], k, theta);
+    var uE = rodrigues([0, 1, 0], k, theta);
+    var uZ = rodrigues([0, 0, 1], k, theta);
+
+    // 垂直于屏幕的轴在其端点退化为一个轻微的 22px 景深准星
+    var isTPerp = Math.abs(uT[2]) > 0.8;
+    var isEPerp = Math.abs(uE[2]) > 0.8;
+
+    // 科技性轴端点 (朝上或水平)
+    var tx2 = ox + 555 * uT[0] + (isTPerp ? -22 * uT[2] : 0);
+    var ty2 = oy - 490 * uT[1] + (isTPerp ? -14 * uT[2] : 0);
+    hline.setAttribute('d', 'M' + ox.toFixed(1) + ' ' + oy.toFixed(1) + ' L' + tx2.toFixed(1) + ' ' + ty2.toFixed(1));
+
+    // 工程性轴端点 (朝下或朝上)
+    var ex2 = ox + 525 * uE[0] + (isEPerp ? -22 * uE[2] : 0);
+    var ey2 = oy - 490 * uE[1] + (isEPerp ? -14 * uE[2] : 0);
+    vline.setAttribute('d', 'M' + ox.toFixed(1) + ' ' + oy.toFixed(1) + ' L' + ex2.toFixed(1) + ' ' + ey2.toFixed(1));
+
+    // 空数轴端点 (水平朝左或水平朝右)
+    var zx2 = ox + 525 * uZ[0];
+    var zy2 = oy - 480 * uZ[1];
+    zline.setAttribute('d', 'M' + ox.toFixed(1) + ' ' + oy.toFixed(1) + ' L' + zx2.toFixed(1) + ' ' + zy2.toFixed(1));
+
+    // 箭头跟随
+    if(arrowTech) arrowTech.setAttribute('d', 'M' + tx2.toFixed(1) + ' ' + ty2.toFixed(1) + ' l-12 -5 v10 z');
+    if(arrowEng) arrowEng.setAttribute('d', 'M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' l-5 12 h10 z');
+    if(arrowEmpty) arrowEmpty.setAttribute('d', 'M' + zx2.toFixed(1) + ' ' + zy2.toFixed(1) + ' l-10 4 v-8 z');
+
+    // 标题跟随
+    if(titleTech){
+      titleTech.setAttribute('x', (tx2 - (uT[0] < -0.1 ? -12 : 8)).toFixed(1));
+      titleTech.setAttribute('y', (ty2 + (uT[1] > 0.1 ? -8 : 18)).toFixed(1));
+      titleTech.setAttribute('text-anchor', uT[0] < -0.1 ? 'start' : 'end');
+    }
+    if(titleEng){
+      titleEng.setAttribute('x', (ex2 + (uE[0] < -0.1 ? -10 : 10)).toFixed(1));
+      titleEng.setAttribute('y', (ey2 + (uE[1] < -0.1 ? 22 : -6)).toFixed(1));
+      titleEng.setAttribute('text-anchor', uE[0] < -0.1 ? 'end' : 'start');
+    }
+    if(titleEmpty && labelAxisEmpty){
+      labelAxisEmpty.setAttribute('opacity', (Math.abs(uZ[0]) * 0.9).toFixed(2));
+      titleEmpty.setAttribute('x', (zx2 + (uZ[0] < 0 ? -12 : 12)).toFixed(1));
+      titleEmpty.setAttribute('y', (zy2 + 16)).toFixed(1);
+      titleEmpty.setAttribute('text-anchor', uZ[0] < 0 ? 'end' : 'start');
+    }
+    zline.setAttribute('opacity', (Math.abs(uZ[0]) * 0.75).toFixed(2));
+  }
+
+  function set3DMode(mode){
+    pts.forEach(function(p){ p.style.transitionDelay = '0s'; }); // 消除入场延迟阻滞
+    if(current3DMode === mode){
+      mode = 'none'; // 再次点击原轴标题则平滑复位回二维图
+    }
+    var prevMode = current3DMode;
+    current3DMode = mode;
+
+    ringwrap.classList.remove('mode-board-tech', 'mode-board-eng');
+
+    // 计算三维旋转目标参数
+    var startOx = curOx, startOy = curOy;
+    var targetOx = 30, targetOy = 540;
+    var targetTheta = 0;
+    var targetK = [1, 0, 0];
+
+    if(mode === 'tech'){
+      ringwrap.classList.add('mode-board-tech');
+      var s3 = 1 / Math.sqrt(3);
+      targetK = [s3, s3, s3];
+      targetTheta = 120 * Math.PI / 180;
+      targetOx = 30; targetOy = 540; // 原点在左下角不变
+    } else if(mode === 'eng'){
+      ringwrap.classList.add('mode-board-eng');
+      var s2 = 1 / Math.sqrt(2);
+      targetK = [s2, 0, -s2];
+      targetTheta = 180 * Math.PI / 180;
+      targetOx = 585; targetOy = 50; // 原点移动到右上角！
+    }
+
+    if(btnAxisTech) btnAxisTech.querySelector('.axis-mode-hint').textContent = (mode === 'tech') ? '[返回2D ⤺]' : '[3D横榜 ▾]';
+    if(btnAxisEng) btnAxisEng.querySelector('.axis-mode-hint').textContent = (mode === 'eng') ? '[返回2D ⤺]' : '[3D横榜 ▾]';
+
+    // 启动 3D 轴系连续补间动画 (720ms) + 终态兜底保障
+    if(axis3DAnimRaf) cancelAnimationFrame(axis3DAnimRaf);
+    var animStartT = performance.now();
+    var animDur = 720;
+    var fromTheta = curRotAngle, fromK = curK;
+    var isGoingBack = (mode === 'none');
+
+    function applyStep(p){
+      var ep = easeGentle(clamp(p, 0, 1));
+      curOx = startOx + (targetOx - startOx) * ep;
+      curOy = startOy + (targetOy - startOy) * ep;
+      var effectiveK = isGoingBack ? fromK : targetK;
+      var effectiveTheta = isGoingBack ? fromTheta * (1 - ep) : targetTheta * ep;
+      curRotAngle = effectiveTheta;
+      curK = effectiveK;
+      updateAxesGeometry(curOx, curOy, effectiveTheta, effectiveK);
+    }
+
+    function stepAxis(){
+      var p = clamp((performance.now() - animStartT) / animDur, 0, 1);
+      applyStep(p);
+      if(p < 1){
+        axis3DAnimRaf = requestAnimationFrame(stepAxis);
+      } else {
+        axis3DAnimRaf = null;
+      }
+    }
+    axis3DAnimRaf = requestAnimationFrame(stepAxis);
+    setTimeout(function(){ applyStep(1); }, animDur + 20);
+
+    if(mode === 'none'){
+      // 复位回 2D 散点象限图
+      pts.forEach(function(p){
+        p.style.transform = 'translate(' + (+p.dataset.origX).toFixed(1) + 'px,' + (+p.dataset.origY).toFixed(1) + 'px)';
+      });
+      return;
+    }
+
+    var isTech = (mode === 'tech');
+    // 根据选定维度严格降序排列 (Rank #01 ~ #12)
+    var sortedIndices = DATA.map(function(_, idx){ return idx; }).sort(function(a, b){
+      var valA = isTech ? DATA[a].x : DATA[a].y;
+      var valB = isTech ? DATA[b].x : DATA[b].y;
+      return valB - valA;
+    });
+
+    // 垂直等距槽位对齐并展开横榜
+    var startX = 70, startY = 70, slotH = 37.5;
+    sortedIndices.forEach(function(origIdx, rank){
+      var p = pts[origIdx];
+      var d = DATA[origIdx];
+      var targetX = startX;
+      var targetY = Math.round(startY + rank * slotH);
+
+      p.style.transform = 'translate(' + targetX + 'px,' + targetY + 'px)';
+
+      var card = p.querySelector('.bar-card');
+      if(card){
+        card.querySelector('.bar-rank').textContent = '#' + (rank < 9 ? '0' : '') + (rank + 1);
+        var score = isTech ? d.x : d.y;
+        card.querySelector('.bar-score').textContent = score;
+        card.querySelector('.bar-fill').setAttribute('width', ((score / 100) * 340).toFixed(1));
+      }
+    });
+  }
+
+  if(btnAxisTech){
+    btnAxisTech.addEventListener('click', function(e){
+      e.stopPropagation();
+      set3DMode('tech');
+    });
+  }
+  if(btnAxisEng){
+    btnAxisEng.addEventListener('click', function(e){
+      e.stopPropagation();
+      set3DMode('eng');
+    });
+  }
+
   /* ---------- 转场时间线 ---------- */
   var raf=null, t0=null;
   function frame(ts){
@@ -1297,6 +1570,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
     });
     cur=-1;
     currentKeysStr = '';
+    set3DMode('none');
     /* 重播开场 CSS 动画 */
     document.querySelectorAll('.draw,.pop,.core span,.core .date small i,.core .rule,.core .open,.hud,.foot__grid .c,.legend,.vert-w,.flash')
       .forEach(function(el){
@@ -1323,6 +1597,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
     if(raf) cancelAnimationFrame(raf);
     raf=requestAnimationFrame(frame);
     setTimeout(function(){ readout(0); }, 2450);
+    setTimeout(function(){ pts.forEach(function(p){ p.style.transitionDelay = '0s'; }); }, 3200);
   }
   function back(){
     if(!phase.classList.contains('phase-2')) return;
@@ -1365,7 +1640,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
     }
   });
   document.querySelector('.ringwrap').addEventListener('click', function(e){
-    if(e.target.closest('button')||e.target.closest('.pt')) return;
+    if(e.target.closest('button')||e.target.closest('.pt')||e.target.closest('.axis-btn')) return;
     phase.classList.contains('phase-2') ? back() : enter();
   });
 

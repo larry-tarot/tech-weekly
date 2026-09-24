@@ -269,9 +269,11 @@ MEASURE_JS = r"""(function(){
         ? cs.transform.match(/matrix\(([^,]+),([^,]+)/) : null;
       if (m && (Math.abs(parseFloat(m[1]) - 1) > 0.01 || Math.abs(parseFloat(m[2])) > 0.01)) return;
     }
-    var min = e.classList.contains('pt') ? __MINSVG__ : __MINTGT__;
+    var isSvgEl = e.classList.contains('pt') || !!e.ownerSVGElement;
+    var min = isSvgEl ? __MINSVG__ : __MINTGT__;
+    var clsStr = (typeof e.className === 'string') ? e.className : (e.getAttribute('class') || e.tagName);
     if (r.w < min || r.h < min) targets.push({
-      sel: String(e.className||e.tagName).slice(0,30),
+      sel: String(clsStr).slice(0,30),
       w: Math.round(r.w), h: Math.round(r.h), min: min});
   });
   out.targets = targets;
