@@ -193,10 +193,10 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
 .mode-board-tech .pt .id,
 .mode-board-eng .pt .id{opacity:0;pointer-events:none}
 .mode-board-tech .bar-card,
-.mode-board-eng .bar-card{opacity:1;pointer-events:auto;transform:scaleX(1)}
+.mode-board-eng .bar-card{opacity:1;pointer-events:auto;transform:scaleX(1);
+  transition:opacity .3s var(--ease) .6s, transform .5s var(--ease) .55s}
 
-/* 3D 模式下压低底层背景线条干扰 */
-.mode-board-tech .seg, .mode-board-eng .seg,
+/* 3D 模式下隐藏底层二维象限的孤立装饰刻度（三轴本身由 JS 按景深逐帧控透明，不在此压低） */
 .mode-board-tech .furn--tick, .mode-board-eng .furn--tick{opacity:.18}
 
 /* 3D 横榜模式下，SVG 画布保持正交观察平面，完全由矢量数学投影驱动轴向，避免额外倾斜造成轴线歪斜 */
@@ -719,6 +719,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
           <path id="arrowTech" d="M585 540 l-14 -5.5 v11 z"/>
           <path id="arrowEng" d="M30 50 l-5.5 14 h11 z"/>
           <path id="arrowEmpty" d="M30 540 l0 0 z" opacity="0"/>
+          <circle id="originDot" cx="30" cy="540" r="4.5" fill="none" stroke="#171A18" stroke-width="1.8"/>
         </g>
         <g class="furn furn--tick tick" id="axisTicks">
           <path id="tickH" d="M30 540 v9M168.8 540 v9M307.5 540 v9M446.3 540 v9M585 540 v9"/>
@@ -1335,59 +1336,79 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
   var arrowEng = document.getElementById('arrowEng');
   var arrowEmpty = document.getElementById('arrowEmpty');
   var zline = document.getElementById('zline');
+  var originDot = document.getElementById('originDot');
 
   var axis3DAnimRaf = null;
   var curOx = 30, curOy = 540;
   var curRotAngle = 0;
   var curK = [1, 0, 0];
 
+  var PERSP = 1100;
+  function projPt(ox, oy, X, Y, Z){
+    // 温和受控透视：近大远小、向灭点收敛，但视差幅度被夹紧，绝不飞出画面；
+    // 在屏平面内（Z=0）的轴视差为 1，故两个终态方向/长度保持严格精确。
+    var w = PERSP / Math.max(PERSP - Z, 260);
+    var wp = 1 + 0.25 * (w - 1);
+    return [ox + X * wp, oy - Y * wp, Z];
+  }
+
   function updateAxesGeometry(ox, oy, theta, k){
-    var uT = rodrigues([1, 0, 0], k, theta);
-    var uE = rodrigues([0, 1, 0], k, theta);
-    var uZ = rodrigues([0, 0, 1], k, theta);
+    // 三根轴是同一个三维直角的三条刚性臂（长度恒定），随旋转矩阵在空间中翻转
+    var aT = rodrigues([555, 0, 0], k, theta);   // 科技性臂
+    var aE = rodrigues([0, 490, 0], k, theta);   // 工程性臂
+    var aZ = rodrigues([0, 0, 520], k, theta);   // 空数臂（初始垂直屏幕）
 
-    // 垂直于屏幕的轴在其端点退化为一个轻微的 22px 景深准星
-    var isTPerp = Math.abs(uT[2]) > 0.8;
-    var isEPerp = Math.abs(uE[2]) > 0.8;
+    function drawArm(lineEl, arrowEl, A, baseOp){
+      var p = projPt(ox, oy, A[0], A[1], A[2]);
+      var x2 = p[0], y2 = p[1], w = p[2];
+      lineEl.setAttribute('d', 'M' + ox.toFixed(1) + ' ' + oy.toFixed(1) + ' L' + x2.toFixed(1) + ' ' + y2.toFixed(1));
+      var len = Math.hypot(x2 - ox, y2 - oy);
+      var open = Math.min(1, len / 200);                        // 0=指向屏幕内（收为原点一点）,1=完全展开
+      var dn = Math.max(0, Math.min(1, w / 600 + 0.5));         // 0=远（指屏幕内）,0.5=在屏平面,1=近（指向屏幕外）
+      var op = baseOp * (0.08 + 0.92 * open) * (0.42 + 0.58 * dn);
+      lineEl.style.opacity = op.toFixed(2);
+      lineEl.style.strokeWidth = (1.3 + 2.0 * dn).toFixed(2);   // 远细近粗
+      if(arrowEl){
+        var ang = Math.atan2(y2 - oy, x2 - ox);
+        var s = 11 + 7 * dn;
+        var bx = x2 - s * Math.cos(ang - 0.42), by = y2 - s * Math.sin(ang - 0.42);
+        var cx2 = x2 - s * Math.cos(ang + 0.42), cy2 = y2 - s * Math.sin(ang + 0.42);
+        arrowEl.setAttribute('d', 'M' + x2.toFixed(1) + ' ' + y2.toFixed(1) + ' L' + bx.toFixed(1) + ' ' + by.toFixed(1) + ' L' + cx2.toFixed(1) + ' ' + cy2.toFixed(1) + ' Z');
+        arrowEl.style.opacity = op.toFixed(2);
+      }
+      return { x: x2, y: y2, w: w, open: open };
+    }
 
-    // 科技性轴端点 (朝上或水平)
-    var tx2 = ox + 555 * uT[0] + (isTPerp ? -22 * uT[2] : 0);
-    var ty2 = oy - 490 * uT[1] + (isTPerp ? -14 * uT[2] : 0);
-    hline.setAttribute('d', 'M' + ox.toFixed(1) + ' ' + oy.toFixed(1) + ' L' + tx2.toFixed(1) + ' ' + ty2.toFixed(1));
+    var rT = drawArm(hline, arrowTech, aT, 1.0);
+    var rE = drawArm(vline, arrowEng, aE, 0.95);
+    var rZ = drawArm(zline, arrowEmpty, aZ, 0.85);
 
-    // 工程性轴端点 (朝下或朝上)
-    var ex2 = ox + 525 * uE[0] + (isEPerp ? -22 * uE[2] : 0);
-    var ey2 = oy - 490 * uE[1] + (isEPerp ? -14 * uE[2] : 0);
-    vline.setAttribute('d', 'M' + ox.toFixed(1) + ' ' + oy.toFixed(1) + ' L' + ex2.toFixed(1) + ' ' + ey2.toFixed(1));
+    // 原点三维角点锚点
+    if(typeof originDot !== 'undefined' && originDot){
+      originDot.setAttribute('cx', ox.toFixed(1));
+      originDot.setAttribute('cy', oy.toFixed(1));
+      originDot.setAttribute('r', '4.5');
+    }
 
-    // 空数轴端点 (水平朝左或水平朝右)
-    var zx2 = ox + 525 * uZ[0];
-    var zy2 = oy - 480 * uZ[1];
-    zline.setAttribute('d', 'M' + ox.toFixed(1) + ' ' + oy.toFixed(1) + ' L' + zx2.toFixed(1) + ' ' + zy2.toFixed(1));
-
-    // 箭头跟随
-    if(arrowTech) arrowTech.setAttribute('d', 'M' + tx2.toFixed(1) + ' ' + ty2.toFixed(1) + ' l-12 -5 v10 z');
-    if(arrowEng) arrowEng.setAttribute('d', 'M' + ex2.toFixed(1) + ' ' + ey2.toFixed(1) + ' l-5 12 h10 z');
-    if(arrowEmpty) arrowEmpty.setAttribute('d', 'M' + zx2.toFixed(1) + ' ' + zy2.toFixed(1) + ' l-10 4 v-8 z');
-
-    // 标题跟随
+    // 标题跟随各自轴尖
     if(titleTech){
-      titleTech.setAttribute('x', (tx2 - (uT[0] < -0.1 ? -12 : 8)).toFixed(1));
-      titleTech.setAttribute('y', (ty2 + (uT[1] > 0.1 ? -8 : 18)).toFixed(1));
-      titleTech.setAttribute('text-anchor', uT[0] < -0.1 ? 'start' : 'end');
+      titleTech.setAttribute('x', (rT.x + (aT[0] < -20 ? -12 : 10)).toFixed(1));
+      titleTech.setAttribute('y', (rT.y + (aT[1] > 20 ? -10 : 20)).toFixed(1));
+      titleTech.setAttribute('text-anchor', aT[0] < -20 ? 'start' : 'end');
+      titleTech.style.opacity = (0.25 + 0.75 * rT.open).toFixed(2);
     }
     if(titleEng){
-      titleEng.setAttribute('x', (ex2 + (uE[0] < -0.1 ? -10 : 10)).toFixed(1));
-      titleEng.setAttribute('y', (ey2 + (uE[1] < -0.1 ? 22 : -6)).toFixed(1));
-      titleEng.setAttribute('text-anchor', uE[0] < -0.1 ? 'end' : 'start');
+      titleEng.setAttribute('x', (rE.x + (aE[0] < -20 ? -12 : 10)).toFixed(1));
+      titleEng.setAttribute('y', (rE.y + (aE[1] < -20 ? 22 : -6)).toFixed(1));
+      titleEng.setAttribute('text-anchor', aE[0] < -20 ? 'end' : 'start');
+      titleEng.style.opacity = (0.25 + 0.75 * rE.open).toFixed(2);
     }
     if(titleEmpty && labelAxisEmpty){
-      labelAxisEmpty.setAttribute('opacity', (Math.abs(uZ[0]) * 0.9).toFixed(2));
-      titleEmpty.setAttribute('x', (zx2 + (uZ[0] < 0 ? -12 : 12)).toFixed(1));
-      titleEmpty.setAttribute('y', (zy2 + 16)).toFixed(1);
-      titleEmpty.setAttribute('text-anchor', uZ[0] < 0 ? 'end' : 'start');
+      labelAxisEmpty.style.opacity = (rZ.open * 0.95).toFixed(2);
+      titleEmpty.setAttribute('x', (rZ.x + (aZ[0] < -20 ? -12 : 12)).toFixed(1));
+      titleEmpty.setAttribute('y', (rZ.y + 16).toFixed(1));
+      titleEmpty.setAttribute('text-anchor', aZ[0] < -20 ? 'end' : 'start');
     }
-    zline.setAttribute('opacity', (Math.abs(uZ[0]) * 0.75).toFixed(2));
   }
 
   function set3DMode(mode){
@@ -1426,7 +1447,7 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
     // 启动 3D 轴系连续补间动画 (720ms) + 终态兜底保障
     if(axis3DAnimRaf) cancelAnimationFrame(axis3DAnimRaf);
     var animStartT = performance.now();
-    var animDur = 720;
+    var animDur = 1050;
     var fromTheta = curRotAngle, fromK = curK;
     var isGoingBack = (mode === 'none');
 
