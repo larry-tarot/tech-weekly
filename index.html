@@ -738,10 +738,10 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
           <path id="tickV" d="M30 540 h-9M30 417.5 h-9M30 295 h-9M30 172.5 h-9M30 50 h-9"/>
         </g>
 
-        <!-- 轴名：科技性 / 工程性（只留轴名，不带按钮提示与空数轴；单榜进入按钮见 .board-btns） -->
+        <!-- 轴名：科技性 / 工程性（静态定位在各自轴端，不随坐标系 3D 动画移动；单榜进入按钮见 .board-btns） -->
         <g class="furn furn--title">
-          <text class="axis-title" id="titleTech" text-anchor="start">科技性</text>
-          <text class="axis-title" id="titleEng" text-anchor="start">工程性</text>
+          <text class="axis-title" id="titleTech" x="590" y="286" text-anchor="end">科技性</text>
+          <text class="axis-title" id="titleEng" x="310" y="28" text-anchor="start">工程性</text>
         </g>
 
         <!-- 档案热点 -->
@@ -1393,19 +1393,8 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
       originDot.setAttribute('r', '4.5');
     }
 
-    // 标题跟随各自轴尖
-    if(titleTech){
-      titleTech.setAttribute('x', (rT.x + (aT[0] < -20 ? -12 : 10)).toFixed(1));
-      titleTech.setAttribute('y', (rT.y + (aT[1] > 20 ? -10 : 20)).toFixed(1));
-      titleTech.setAttribute('text-anchor', aT[0] < -20 ? 'start' : 'end');
-      titleTech.style.opacity = (0.25 + 0.75 * rT.open).toFixed(2);
-    }
-    if(titleEng){
-      titleEng.setAttribute('x', (rE.x + (aE[0] < -20 ? -12 : 10)).toFixed(1));
-      titleEng.setAttribute('y', (rE.y + (aE[1] < -20 ? 22 : -6)).toFixed(1));
-      titleEng.setAttribute('text-anchor', aE[0] < -20 ? 'end' : 'start');
-      titleEng.style.opacity = (0.25 + 0.75 * rE.open).toFixed(2);
-    }
+    // 轴名 titleTech/titleEng 采用静态定位（HTML 写死 x/y），刻意不跟随轴尖移动 ——
+    // 与坐标系 3D 动画解耦，避免 2D 时两标签叠在一起、排行时被条形盖住。
     if(titleEmpty && labelAxisEmpty){
       labelAxisEmpty.style.opacity = (rZ.open * 0.95).toFixed(2);
       titleEmpty.setAttribute('x', (rZ.x + (aZ[0] < -20 ? -12 : 12)).toFixed(1));
