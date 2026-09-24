@@ -166,10 +166,11 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
 .mode-board-tech .furn--zaxis,
 .mode-board-eng .furn--zaxis{opacity:.85}
 
-/* 进入单榜按钮：图区右上角两枚描边胶囊（仅坐标目录阶段显示） */
-.board-btns{position:absolute;top:1.5%;right:1.5%;display:flex;gap:8px;z-index:5;
-  opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
-.phase-2 .board-btns{opacity:1;pointer-events:auto}
+/* 进入单榜按钮：本期目录(.titleblock)下方两枚描边胶囊（仅坐标目录阶段显示） */
+.board-btns{position:absolute;left:var(--pad);top:calc(clamp(14px,2.8vh,32px) + 54px);
+  display:flex;gap:8px;z-index:4;
+  opacity:0;pointer-events:none;transition:opacity .45s var(--ease)}
+.phase-2 .board-btns{opacity:1;pointer-events:auto;transition:opacity .6s var(--ease) 2.45s}
 .board-btn{font-family:var(--f-misans);font-size:12.5px;letter-spacing:.03em;color:var(--ink-1);
   background:rgba(255,255,255,.72);border:1px solid var(--line-2);border-radius:999px;
   padding:6px 15px;cursor:pointer;white-space:nowrap;
@@ -653,6 +654,12 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
       <span class="en">Contents</span>
     </div>
 
+    <!-- 进入单榜按钮：本期目录下方两枚描边胶囊 -->
+    <div class="board-btns">
+      <button class="board-btn" id="btnAxisTech" type="button">科技性排行</button>
+      <button class="board-btn" id="btnAxisEng" type="button">工程性排行</button>
+    </div>
+
     <div class="aside">
       <div class="aside__head">
         <h2 class="trend-title">本月整体大趋势</h2>
@@ -736,12 +743,6 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
         <!-- 档案热点 -->
         <g id="points"></g>
       </svg>
-
-      <!-- 进入单榜按钮：图区右上角两枚胶囊 -->
-      <div class="board-btns">
-        <button class="board-btn" id="btnAxisTech" type="button">科技性排行</button>
-        <button class="board-btn" id="btnAxisEng" type="button">工程性排行</button>
-      </div>
 
       <!-- 环心 -->
       <div class="core">
