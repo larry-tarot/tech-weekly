@@ -166,13 +166,16 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
 .mode-board-tech .furn--zaxis,
 .mode-board-eng .furn--zaxis{opacity:.85}
 
-/* 轴标题可点击交互 */
-.axis-btn{cursor:pointer}
-.axis-btn .hit{fill:transparent;stroke:none}
-.axis-btn:hover .axis-title{fill:var(--acid-d)}
-.axis-mode-hint{font-family:var(--f-misans);font-size:8.5px;letter-spacing:.06em;fill:var(--acid-d);font-weight:400}
-.mode-board-tech #btnAxisTech .axis-title,
-.mode-board-eng #btnAxisEng .axis-title{fill:var(--acid-d)}
+/* 进入单榜按钮：图区右上角两枚描边胶囊（仅坐标目录阶段显示） */
+.board-btns{position:absolute;top:1.5%;right:1.5%;display:flex;gap:8px;z-index:5;
+  opacity:0;pointer-events:none;transition:opacity .3s var(--ease)}
+.phase-2 .board-btns{opacity:1;pointer-events:auto}
+.board-btn{font-family:var(--f-misans);font-size:12.5px;letter-spacing:.03em;color:var(--ink-1);
+  background:rgba(255,255,255,.72);border:1px solid var(--line-2);border-radius:999px;
+  padding:6px 15px;cursor:pointer;white-space:nowrap;
+  transition:color .18s var(--ease-ui),border-color .18s var(--ease-ui),background .18s var(--ease-ui)}
+.board-btn:hover{border-color:var(--acid-d);color:var(--ink-0)}
+.board-btn.is-active{background:var(--acid);border-color:var(--acid);color:#fff;font-weight:700}
 
 /* 散点与横榜卡片的平滑蜕变 */
 .pt{opacity:0;transition:opacity .32s var(--ease-stamp),transform .68s var(--ease);cursor:pointer}
@@ -728,24 +731,17 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
           <path id="tickV" d="M30 540 h-9M30 417.5 h-9M30 295 h-9M30 172.5 h-9M30 50 h-9"/>
         </g>
 
-        <g class="furn furn--title">
-          <g class="axis-btn" id="btnAxisTech" role="button" tabindex="0" aria-label="切换科技性3D排行榜">
-            <rect class="hit" x="435" y="534" width="150" height="36"/>
-            <text class="axis-title" id="titleTech" x="577" y="558" text-anchor="end">科技性 <tspan class="axis-mode-hint">[3D横榜 ▾]</tspan></text>
-          </g>
-          <g class="axis-btn" id="btnAxisEng" role="button" tabindex="0" aria-label="切换工程性3D排行榜">
-            <rect class="hit" x="30" y="24" width="150" height="36"/>
-            <text class="axis-title" id="titleEng" x="38" y="46">工程性 <tspan class="axis-mode-hint">[3D横榜 ▾]</tspan></text>
-          </g>
-          <!-- 空数轴标签 (旋转显现) -->
-          <g id="labelAxisEmpty" opacity="0">
-            <text class="axis-title" id="titleEmpty" x="30" y="540" fill="var(--ink-3)" font-size="10.5" letter-spacing="1">空数轴 // EMPTY AXIS</text>
-          </g>
-        </g>
+        <!-- 坐标轴文字标签已移除；进入单榜的按钮改为图区右上角的胶囊按钮(.board-btns) -->
 
         <!-- 档案热点 -->
         <g id="points"></g>
       </svg>
+
+      <!-- 进入单榜按钮：图区右上角两枚胶囊 -->
+      <div class="board-btns">
+        <button class="board-btn" id="btnAxisTech" type="button">科技性排行</button>
+        <button class="board-btn" id="btnAxisEng" type="button">工程性排行</button>
+      </div>
 
       <!-- 环心 -->
       <div class="core">
@@ -1443,8 +1439,8 @@ svg, svg *, .pt, .pt *{outline:none!important;-webkit-tap-highlight-color:transp
       targetOx = 585; targetOy = 50; // 原点移动到右上角！
     }
 
-    if(btnAxisTech) btnAxisTech.querySelector('.axis-mode-hint').textContent = (mode === 'tech') ? '[返回2D ⤺]' : '[3D横榜 ▾]';
-    if(btnAxisEng) btnAxisEng.querySelector('.axis-mode-hint').textContent = (mode === 'eng') ? '[返回2D ⤺]' : '[3D横榜 ▾]';
+    if(btnAxisTech) btnAxisTech.classList.toggle('is-active', mode === 'tech');
+    if(btnAxisEng) btnAxisEng.classList.toggle('is-active', mode === 'eng');
 
     // 启动 3D 轴系连续补间动画 (720ms) + 终态兜底保障
     if(axis3DAnimRaf) cancelAnimationFrame(axis3DAnimRaf);
